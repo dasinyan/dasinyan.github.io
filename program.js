@@ -22,6 +22,9 @@ function main() {
   var sn9 = $("#p9").text();
   var stes = $("#tebo").text();
 
+  var kotae = $("#kotae").text();
+  var mov= $("#kotae2").text(); 
+
   $('.panel').click(function() {
 
     switch($(this).attr("id")) {
@@ -96,48 +99,91 @@ $('.bot').click(function() {
         switch(tes) {
           case "0":
             set0();
+            kotae = "none";
             wmem();
+            $("#kotae").html(kotae);
             $("#hyouji").html("Let's Try");
           break;
           case "1":
             set0();
+            kotae = "";
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             wmem();
+            $("#kotae").html(kotae);
             $("#hyouji").html("Let's Try");
           break;
           case "2":
             set0();
+         　 kotae = "";
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             wmem();
+            $("#kotae").html(kotae);
             $("#hyouji").html("Let's Try");
+            
           break;
           case "3":
             set0();
+            kotae = "";
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             wmem();
+            $("#kotae").html(kotae);
             $("#hyouji").html("Let's Try");
           break;
           case "4":
             set0();
+            kotae = "";
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             wmem();
+            $("#kotae").html(kotae);
             $("#hyouji").html("Let's Try");
           break;
           case "5":
             set0();
+            kotae = "";
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             wmem();
-            $("#hyouji").html("Let's Try");
+            $("#kotae").html(kotae);
+            $("#hyouji").html(kotae);
           break;
          }  
       break;
@@ -205,7 +251,9 @@ function set0() {
 }
 
 function mset() {
-  const mov = Math.floor(Math.random()*9)+1;
+  mov = Math.floor(Math.random()*9)+1;
+　//kotae = mov +"." + kotae;
+  $("#kotae2").html(mov);
                 switch(mov) {
                 case 1:
                   pm1();
@@ -560,3 +608,5 @@ function pm9() {
 $(function () {
   main();
 });
+
+
