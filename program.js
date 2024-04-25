@@ -183,7 +183,7 @@ $('.bot').click(function() {
             kotae = mov + kotae;
             wmem();
             $("#kotae").html(kotae);
-            $("#hyouji").html(kotae);
+            $("#hyouji").html("Let's Try");
           break;
          }  
       break;
