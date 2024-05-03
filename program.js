@@ -91,9 +91,21 @@ $('.bot').click(function() {
             $("#tebo").html(5);
           break;
           case "5":
+            $("#tebo").html(6);
+          break;
+          case "6":
+            $("#tebo").html(7);
+          break;
+          case "7":
+            $("#tebo").html(8);
+          break;
+          case "8":
+            $("#tebo").html(9);
+          break;
+          case "9":
             $("#tebo").html(0);
           break;
-        }    
+      	}    
       break;
       case "sebo":
         switch(tes) {
@@ -166,6 +178,124 @@ $('.bot').click(function() {
           case "5":
             set0();
             kotae = "";
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            wmem();
+            $("#kotae").html(kotae);
+            $("#hyouji").html("Let's Try");
+          break;
+          case "6":
+            set0();
+            kotae = "";
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            wmem();
+            $("#kotae").html(kotae);
+            $("#hyouji").html("Let's Try");
+          break;
+          case "7":
+            set0();
+            kotae = "";
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            wmem();
+            $("#kotae").html(kotae);
+            $("#hyouji").html("Let's Try");
+          break;
+          case "8":
+            set0();
+            kotae = "";
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            wmem();
+            $("#kotae").html(kotae);
+            $("#hyouji").html("Let's Try");
+          break;
+          case "9":
+            set0();
+            kotae = "";
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
+            mset();
+            mov = $("#kotae2").text();
+            kotae = mov + kotae;
             mset();
             mov = $("#kotae2").text();
             kotae = mov + kotae;
