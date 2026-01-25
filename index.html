@@ -1,115 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head> 
-  <title>数字のパズる</title>
+  <meta charset="UTF-8"> <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Cyclogic</title>
   <link rel="stylesheet" href="style.css">
   <script src="jquery-1.12.4.min.js"></script>
   <script src="program.js"></script>
-  
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div id="content">
 
-  <div>
-    <button type="button" style="color: blue;" id="hyouji">Let's Try</button>
-  </div>
+  <header>
+    <button type="button" id="hyouji">Let's Try</button>
+  </header>
 
-  <div>
-    <button type="button" style="color: black;" class="panel" id="p1">1</button>
-    <button type="button" style="color: black;" class="panel" id="p2">2</button>
-    <button type="button" style="color: black;" class="panel" id="p3">3</button>
-  </div>
+  <main class="puzzle-grid">
+    <div class="row">
+      <button type="button" class="panel" id="p1">1</button>
+      <button type="button" class="panel" id="p2">2</button>
+      <button type="button" class="panel" id="p3">3</button>
+    </div>
+    <div class="row">
+      <button type="button" class="panel" id="p4">4</button>
+      <button type="button" class="panel" id="p5">5</button>
+      <button type="button" class="panel" id="p6">6</button>
+    </div>
+    <div class="row">
+      <button type="button" class="panel" id="p7">7</button>
+      <button type="button" class="panel" id="p8">8</button>
+      <button type="button" class="panel" id="p9">9</button>
+    </div>
+  </main>
 
-  <div>
-    <button type="button" style="color: black;" class="panel" id="p4">4</button>
-    <button type="button" style="color: black;" class="panel" id="p5">5</button>
-    <button type="button" style="color: black;" class="panel" id="p6">6</button>
-  </div>
+  <nav class="controls">
+    <button type="button" class="bot-special" id="tebo">0</button>
+    <div class="button-group">
+      <button type="button" class="bot" id="sebo">SET</button>
+      <button type="button" class="bot" id="resebo">RESET</button>
+      <button type="button" class="bot" id="input">INPUT</button>
+    </div>
+  </nav>
+<article id="torisetu">
+  <section>
+    <h3 class="label">[ SYSTEM LOGIC ]</h3>
+    <p>数字をタップ！<br>押されてない数字が時計回りに回るよ<br>
+    <span class="en">Tap any number! The other 8 numbers rotate clockwise.</span></p>
+  </section>
 
-  <div>
-    <button type="button" style="color: black;" class="panel" id="p7">7</button>
-    <button type="button" style="color: black;" class="panel" id="p8">8</button>
-    <button type="button" style="color: black;" class="panel" id="p9">9</button>
-  </div>
+  <section>
+    <h3 class="label label-mission">[ MISSION ]</h3>
+    <p>0 + [SET]: ターゲット(完成形)を表示<br>
+    1-11 + [SET]: その手数で解ける問題を生成<br>
+    <span class="en">0+[SET]: Target / 1-11+[SET]: Generate N-step puzzle.</span></p>
+  </section>
 
-  <div>
-    <button type="button" style="color: red;" class="bot" id="tebo">0</button>
-  </div>
-  <div>
-    <button type="button" style="color: blue;" class="bot" id="sebo">set</button>
-  </div>
-  <div>
-    <button type="button" style="color: blue;"class="bot" id="resebo">reset</button>
-  </div>
- <div>
-    <button type="button" style="color: blue;"class="bot" id="input">input</button>
-  </div>
+  <section>
+    <h3 class="label label-command">[ COMMANDS ]</h3>
+    <p>INPUT: 任意入力モード<br>重複時は強制リセット<br>
+    <span class="en">INPUT: Manual mode. Duplicates trigger a reset.</span></p>
+  </section>
+</article>
+ 
 
-  <div style="color: black;" id="torisetu">
-    <div>
-遊び方：
-    </div>
-    <div>
-３＊３の数字のいずれかをを押すと
-    </div>
-    <div>
-押されなかった８個の数字が
-    </div>
-    <div>
-時計回りに移動します。
-    </div>
-    <div>
-赤の数字「０」で「set」を押すと完成形。
-    </div>
-    <div>
-「１」～「９」で「set」を押すと
-    </div>
-    <div>
-その回数の移動で完成形となる問題に。
-    </div>
-    <div>
-「reset」を押すと直前の問題に戻ります。
-    </div>
-　　　<br>
-    <div>
-「input」を押すと入力モードとなります。
-    </div>
-    <div>
-数字を押して任意の数字を選ぶことが出来
-    </div>
-    <div>
-もう一度「input」を押して戻ります。
-    </div>
-    <div>
-その際、数字に重複等ある場合は
-    </div>
-    <div>
-完成形が出力されます。
-    </div>
-    <br>
-    <br>
-    <br>
-　　<div>
-下の数字が解答例。
-    </div>
-    <div>
-数字は、完成形の数字の位置。
-    </div>
-  </div>
-
-  <div>
-    <button type="button" style="color: gray;" id="kotae">none</button>
-  </div>
-  <div>
+  <footer>
+    <div class="label-hint">[ ANSWER EXAMPLE / 解答例 ]</div>
+    <button type="button" id="kotae">none</button>
     <button type="button" hidden id="kotae2">none</button>
-  </div>
-  <div>
     <button type="button" hidden id="flinput">0</button>
-  </div>
+  </footer>
 
 </div>
-
 
 </body>
 </html>

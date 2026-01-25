@@ -1,1177 +1,291 @@
+
+// 変数宣言はそのまま維持
+var n1, n2, n3, n4, n5, n6, n7, n8, n9, tes;
+var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
+var kotae, mov, flinput;
+
 function main() { 
-  
-  var n1 = $("#p1").text();
-  var n2 = $("#p2").text();
-  var n3 = $("#p3").text();
-  var n4 = $("#p4").text();
-  var n5 = $("#p5").text();
-  var n6 = $("#p6").text();
-  var n7 = $("#p7").text();
-  var n8 = $("#p8").text();
-  var n9 = $("#p9").text();
-  var tes = $("#tebo").text();
+  wmem(); 
 
-  var sn1 = $("#p1").text();
-  var sn2 = $("#p2").text();
-  var sn3 = $("#p3").text();
-  var sn4 = $("#p4").text();
-  var sn5 = $("#p5").text();
-  var sn6 = $("#p6").text();
-  var sn7 = $("#p7").text();
-  var sn8 = $("#p8").text();
-  var sn9 = $("#p9").text();
-  var stes = $("#tebo").text();
-
-  var kotae = $("#kotae").text();
-  var mov = $("#kotae2").text();
-  var flinput = $("#flinput").text(); 
-
-$('.panel').click(function() {
-  flinput = $("#flinput").text();
-  switch(flinput) {
-    case "0":
-       switch($(this).attr("id")) {
-         case "p1":
-           pm1();
-       	   hantei();
-         break;
-         case "p2":
-           pm2();
-           hantei();
-         break;
-         case "p3":
-           pm3();
-           hantei();
-         break;
-         case "p4":
-           pm4();
-           hantei();
-         break;
-         case "p5":
-           pm5();
-           hantei();
-         break;
-         case "p6":
-           pm6();
-           hantei();
-         break;
-         case "p7":
-           pm7();
-           hantei();
-         break;
-         case "p8":
-           pm8();
-           hantei();
-         break;
-         case "p9":
-           pm9();
-           hantei();
-         break;
-      }
-    break;
-    case "1":
-      switch($(this).attr("id")) {
-        case "p1":
-           n1 = $("#p1").text();
-           switch(n1) {
-             case "1":
-               n1 = 2;
-               $("#p1").html(n1);
-             break; 
-             case "2":
-               n1 = 3;
-               $("#p1").html(n1);
-             break;
-             case "3":
-               n1 = 4;
-               $("#p1").html(n1);
-             break;
-             case "4":
-               n1 = 5;
-               $("#p1").html(n1);
-             break;
-             case "5":
-               n1 = 6;
-               $("#p1").html(n1);
-             break;
-             case "6":
-               n1 = 7;
-               $("#p1").html(n1);
-             break;
-             case "7":
-               n1 = 8;
-               $("#p1").html(n1);
-             break;
-             case "8":
-               n1 = 9;
-               $("#p1").html(n1);
-             break;
-             case "9":
-               n1 = 1;
-               $("#p1").html(n1);
-             break;
-           } 
-        break;
-        case "p2":
-           n2 = $("#p2").text();
-           switch(n2) {
-             case "1":
-               n2 = 2;
-               $("#p2").html(n2);
-             break; 
-             case "2":
-               n2 = 3;
-               $("#p2").html(n2);
-             break;
-             case "3":
-               n2 = 4;
-               $("#p2").html(n2);
-             break;
-             case "4":
-               n2 = 5;
-               $("#p2").html(n2);
-             break;
-             case "5":
-               n2 = 6;
-               $("#p2").html(n2);
-             break;
-             case "6":
-               n2 = 7;
-               $("#p2").html(n2);
-             break;
-             case "7":
-               n2 = 8;
-               $("#p2").html(n2);
-             break;
-             case "8":
-               n2 = 9;
-               $("#p2").html(n2);
-             break;
-             case "9":
-               n2 = 1;
-               $("#p2").html(n2);
-             break;
-           } 
-        break;
-        case "p3":
-           n3 = $("#p3").text();
-           switch(n3) {
-             case "1":
-               n3 = 2;
-               $("#p3").html(n3);
-             break; 
-             case "2":
-               n3 = 3;
-               $("#p3").html(n3);
-             break;
-             case "3":
-               n3 = 4;
-               $("#p3").html(n3);
-             break;
-             case "4":
-               n3 = 5;
-               $("#p3").html(n3);
-             break;
-             case "5":
-               n3 = 6;
-               $("#p3").html(n3);
-             break;
-             case "6":
-               n3 = 7;
-               $("#p3").html(n3);
-             break;
-             case "7":
-               n3 = 8;
-               $("#p3").html(n3);
-             break;
-             case "8":
-               n3 = 9;
-               $("#p3").html(n3);
-             break;
-             case "9":
-               n3 = 1;
-               $("#p3").html(n3);
-             break;
-           } 
-        break;
-        case "p4":
-           n4 = $("#p4").text();
-           switch(n4) {
-             case "1":
-               n4 = 2;
-               $("#p4").html(n4);
-             break; 
-             case "2":
-               n4 = 3;
-               $("#p4").html(n4);
-             break;
-             case "3":
-               n4 = 4;
-               $("#p4").html(n4);
-             break;
-             case "4":
-               n4 = 5;
-               $("#p4").html(n4);
-             break;
-             case "5":
-               n4 = 6;
-               $("#p4").html(n4);
-             break;
-             case "6":
-               n4 = 7;
-               $("#p4").html(n4);
-             break;
-             case "7":
-               n4 = 8;
-               $("#p4").html(n4);
-             break;
-             case "8":
-               n4 = 9;
-               $("#p4").html(n4);
-             break;
-             case "9":
-               n4 = 1;
-               $("#p4").html(n4);
-             break;
-           } 
-        break;
-        case "p5":
-           n5 = $("#p5").text();
-           switch(n5) {
-             case "1":
-               n5 = 2;
-               $("#p5").html(n5);
-             break; 
-             case "2":
-               n5 = 3;
-               $("#p5").html(n5);
-             break;
-             case "3":
-               n5 = 4;
-               $("#p5").html(n5);
-             break;
-             case "4":
-               n5 = 5;
-               $("#p5").html(n5);
-             break;
-             case "5":
-               n5 = 6;
-               $("#p5").html(n5);
-             break;
-             case "6":
-               n5 = 7;
-               $("#p5").html(n5);
-             break;
-             case "7":
-               n5 = 8;
-               $("#p5").html(n5);
-             break;
-             case "8":
-               n5 = 9;
-               $("#p5").html(n5);
-             break;
-             case "9":
-               n5 = 1;
-               $("#p5").html(n5);
-             break;
-           } 
-        break;
-        case "p6":
-           n6 = $("#p6").text();
-           switch(n6) {
-             case "1":
-               n6 = 2;
-               $("#p6").html(n6);
-             break; 
-             case "2":
-               n6 = 3;
-               $("#p6").html(n6);
-             break;
-             case "3":
-               n6 = 4;
-               $("#p6").html(n6);
-             break;
-             case "4":
-               n6 = 5;
-               $("#p6").html(n6);
-             break;
-             case "5":
-               n6 = 6;
-               $("#p6").html(n6);
-             break;
-             case "6":
-               n6 = 7;
-               $("#p6").html(n6);
-             break;
-             case "7":
-               n6 = 8;
-               $("#p6").html(n6);
-             break;
-             case "8":
-               n6 = 9;
-               $("#p6").html(n6);
-             break;
-             case "9":
-               n6 = 1;
-               $("#p6").html(n6);
-             break;
-           } 
-        break;
-        case "p7":
-           n7 = $("#p7").text();
-           switch(n7) {
-             case "1":
-               n7 = 2;
-               $("#p7").html(n7);
-             break; 
-             case "2":
-               n7 = 3;
-               $("#p7").html(n7);
-             break;
-             case "3":
-               n7 = 4;
-               $("#p7").html(n7);
-             break;
-             case "4":
-               n7 = 5;
-               $("#p7").html(n7);
-             break;
-             case "5":
-               n7 = 6;
-               $("#p7").html(n7);
-             break;
-             case "6":
-               n7 = 7;
-               $("#p7").html(n7);
-             break;
-             case "7":
-               n7 = 8;
-               $("#p7").html(n7);
-             break;
-             case "8":
-               n7 = 9;
-               $("#p7").html(n7);
-             break;
-             case "9":
-               n7 = 1;
-               $("#p7").html(n7);
-             break;
-           } 
-        break;
-        case "p8":
-           n8 = $("#p8").text();
-           switch(n8) {
-             case "1":
-               n8 = 2;
-               $("#p8").html(n8);
-             break; 
-             case "2":
-               n8 = 3;
-               $("#p8").html(n8);
-             break;
-             case "3":
-               n8 = 4;
-               $("#p8").html(n8);
-             break;
-             case "4":
-               n8 = 5;
-               $("#p8").html(n8);
-             break;
-             case "5":
-               n8 = 6;
-               $("#p8").html(n8);
-             break;
-             case "6":
-               n8 = 7;
-               $("#p8").html(n8);
-             break;
-             case "7":
-               n8 = 8;
-               $("#p8").html(n8);
-             break;
-             case "8":
-               n8 = 9;
-               $("#p8").html(n8);
-             break;
-             case "9":
-               n8 = 1;
-               $("#p8").html(n8);
-             break;
-           } 
-        break;
-        case "p9":
-           n9 = $("#p9").text();
-           switch(n9) {
-             case "1":
-               n9 = 2;
-               $("#p9").html(n9);
-             break; 
-             case "2":
-               n9 = 3;
-               $("#p9").html(n9);
-             break;
-             case "3":
-               n9 = 4;
-               $("#p9").html(n9);
-             break;
-             case "4":
-               n9 = 5;
-               $("#p9").html(n9);
-             break;
-             case "5":
-               n9 = 6;
-               $("#p9").html(n9);
-             break;
-             case "6":
-               n9 = 7;
-               $("#p9").html(n9);
-             break;
-             case "7":
-               n9 = 8;
-               $("#p9").html(n9);
-             break;
-             case "8":
-               n9 = 9;
-               $("#p9").html(n9);
-             break;
-             case "9":
-               n9 = 1;
-               $("#p9").html(n9);
-             break;
-           } 
-        break; 
-      }
-    break;
-
-  } 
-});
-
-$('.bot').click(function() {
-
-    tes = $("#tebo").text();
-   
-    switch($(this).attr("id")) {
-      case "tebo":
-        flinput = $("#flinput").text();
-        switch(flinput) {
-          case "0":
-            switch(tes) {
-              case "0":
-                $("#tebo").html(1);
-              break;
-              case "1":
-                $("#tebo").html(2);
-              break;
-              case "2":
-                $("#tebo").html(3);
-              break;
-              case "3":
-                $("#tebo").html(4);
-              break;
-              case "4":
-                $("#tebo").html(5);
-              break;
-              case "5":
-                $("#tebo").html(6);
-              break;
-              case "6":
-                $("#tebo").html(7);
-              break;
-              case "7":
-                $("#tebo").html(8);
-              break;
-              case "8":
-                $("#tebo").html(9);
-              break;
-              case "9":
-              $("#tebo").html(0);
-              break;
-           }
-          break;
-         }
-      break;
-      case "sebo":
-        flinput = $("#flinput").text();
-        switch(flinput) {
-          case "0":
-            switch(tes) {
-          case "0":
-            set0();
-            kotae = "none";
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "1":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "2":
-            set0();
-         　 kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-            
-          break;
-          case "3":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "4":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "5":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "6":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "7":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "8":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-          case "9":
-            set0();
-            kotae = "";
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            mset();
-            mov = $("#kotae2").text();
-            kotae = mov + kotae;
-            wmem();
-            $("#kotae").html(kotae);
-            $("#hyouji").html("Let's Try");
-          break;
-         }
-          break;
-        }
-          
-      break;
-      case "resebo":
-        flinput = $("#flinput").text();
-        switch(flinput) {
-          case "0":
-             rmem();
-          break;
-        }
-         rmem(); 
-      break;
-      case "input":
-        flinput = $("#flinput").text();
-        switch (flinput) {
-          case "0":
-            flinput = 1;
-            $("#flinput").html(1);
-            $("#hyouji").html("Input mode");
-            tebo = 0;
-            $("#tebo").html(0);
-            $("#kotae").html("none");
-          break;
-          case "1":
-            n1 = $("#p1").text();
-            n2 = $("#p2").text();
-            n3 = $("#p3").text();
-            n4 = $("#p4").text();
-            n5 = $("#p5").text();
-            n6 = $("#p6").text();
-            n7 = $("#p7").text();
-            n8 = $("#p8").text();
-            n9 = $("#p9").text();
-            if (n1==n2||n1==n3||n1==n4||n1==n5||n1==n6||n1==n7||n1==n8||n1==n9||
-                        n2==n3||n2==n4||n2==n5||n2==n6||n2==n7||n2==n8||n2==n9||
-                                n3==n4||n3==n5||n3==n6||n3==n7||n3==n8||n3==n9||
-                                        n4==n5||n4==n6||n4==n7||n4==n8||n4==n9||
-                                                n5==n6||n5==n7||n5==n8||n5==n9||
-                                                        n6==n7||n6==n8||n6==n9||
-                                                                n7==n8||n8==n9||
-                                                                        n8==n9) {
-            set0()
-            }
-            flinput = 0;
-            $("#flinput").html(0);
-            $("#hyouji").html("Let's Try");
-            wmem()
-          break;
-        }
-      break;
-    }
+  // --- パネルクリック：ここは「回転」と「判定」だけに専念させます ---
+  $('.panel').click(function() {
+    flinput = $("#flinput").text();
     
+    if (flinput === "0") {
+      // あなたの pmロジックを呼び出すだけ。手数はここでは動かしません。
+      var id = $(this).attr("id");
+      switch(id) {
+        case "p1": pm1(); break;
+        case "p2": pm2(); break;
+        case "p3": pm3(); break;
+        case "p4": pm4(); break;
+        case "p5": pm5(); break;
+        case "p6": pm6(); break;
+        case "p7": pm7(); break;
+        case "p8": pm8(); break;
+        case "p9": pm9(); break;
+      }
+      hantei(); // 回転のあとに判定
+    } else if (flinput === "1") {
+      // INPUTモード時の数値切り替え
+      var currentVal = parseInt($(this).text());
+      $(this).html((currentVal % 9) + 1);
+    }
+  });
+
+  // --- コントロールボタン：役割を明確に分離しました ---
+  $('.bot, .bot-special').click(function() {
+    tes = $("#tebo").text();
+    flinput = $("#flinput").text();
+    var btnId = $(this).attr("id");
+
+    switch(btnId) {
+      
+case "tebo":
+        if (flinput === "0") {
+          var currentTes = $("#tebo").text();
+          var nextTes;
+
+          if (currentTes === "?") {
+            // 「？」の場合は、次に押したときに「1」にする（あるいは0に戻すなら0に）
+            nextTes = 1;
+          } else {
+            // 通常の数字の場合は、これまで通り1〜11でループ
+            nextTes = (parseInt(currentTes) + 1) % 12;
+          }
+          
+          $("#tebo").html(nextTes);
+        }
+        break;
+      case "sebo":
+
+        // ★ここから追加：演出のリセット
+        $(".panel").removeClass("complete-glow");
+        $("#content").removeClass("victory-bg");
+        $("#hyouji").css("color", "").css("text-shadow", ""); // CSSの設定に戻す
+        // ★ここまで追加
+        if (flinput === "0") {
+          var tesText = $("#tebo").text();
+          var loopCount = (tesText === "?") ? 0 : parseInt(tesText);
+          if (tesText === "?") $("#tebo").html("0");
+
+          set0(); 
+          kotae = "";
+          
+          if (loopCount > 0) {
+            for (var i = 0; i < loopCount; i++) {
+              mset();
+              kotae = $("#kotae2").text() + kotae;
+            }
+            $("#kotae").html(kotae); // 正解を表示
+          } else {
+            // 手数0（リセット）の時は解答もなし
+            $("#kotae").html("none");
+          }
+          
+          wmem();
+          $("#hyouji").html("Let's Try");
+        }
+        break;
+
+      case "resebo":
+	$(".panel").removeClass("complete-glow");
+        $("#content").removeClass("victory-bg");
+        $("#hyouji").css("color", "").css("text-shadow", "");
+        rmem(); 
+        break;
+
+     case "input":
+	$(".panel").removeClass("complete-glow");
+        $("#content").removeClass("victory-bg");
+        $("#hyouji").css("color", "").css("text-shadow", ""); // CSSの設定に戻す
+        if (flinput === "0") {
+          // --- INPUTモード開始 ---
+          $("#flinput").html("1");
+          $("#hyouji").html("Input mode");
+          $("#tebo").html("0");
+          $("#kotae").html("......");
+        } else {
+          // --- INPUTモード終了（脱出処理） ---
+          var currentNumbers = [];
+          var isDuplicate = false;
+
+          // 1. 重複チェック
+          for (var i = 1; i <= 9; i++) {
+            var val = $("#p" + i).text();
+            if (currentNumbers.includes(val)) {
+              isDuplicate = true;
+              break;
+            }
+            currentNumbers.push(val);
+          }
+
+          // 2. 判定結果による分岐
+          if (isDuplicate) {
+            $("#hyouji").html("Duplicate! Reset.");
+            set0(); // 盤面を1〜9にリセット
+            $("#kotae").html("none");
+            $("#tebo").html("0");
+          } else {
+            $("#hyouji").html("Let's Try");
+            $("#tebo").html("?");
+            $("#kotae").html("??????");
+          }
+
+          // 3. 【重要】何があっても通常モード(0)に戻す
+          $("#flinput").html("0"); 
+          
+          // 4. 状態を保存
+          wmem();
+        }
+        break;
+    }
   });
 }
 
+// ※以下、pm1() ~ pm9() および補助関数（wmem, rmem, hantei, set0, mset）は
+//   先ほどの「あなたのロジックを再現したもの」をそのまま後ろに繋げてください。
+
+// --- 補助関数群（あなたのロジックをそのまま移植） ---
+
 function wmem() {
-  sn1 = $("#p1").text();
-  sn2 = $("#p2").text();
-  sn3 = $("#p3").text();
-  sn4 = $("#p4").text();
-  sn5 = $("#p5").text();
-  sn6 = $("#p6").text();
-  sn7 = $("#p7").text();
-  sn8 = $("#p8").text();
-  sn9 = $("#p9").text();
-  stes = $("#tebo").text();
+  sn1=$("#p1").text(); sn2=$("#p2").text(); sn3=$("#p3").text();
+  sn4=$("#p4").text(); sn5=$("#p5").text(); sn6=$("#p6").text();
+  sn7=$("#p7").text(); sn8=$("#p8").text(); sn9=$("#p9").text();
+  stes=$("#tebo").text();
 }
 
 function rmem() {
-    $("#p1").html(sn1);
-    $("#p2").html(sn2);
-    $("#p3").html(sn3);
-    $("#p4").html(sn4);
-    $("#p5").html(sn5);
-    $("#p6").html(sn6);
-    $("#p7").html(sn7);
-    $("#p8").html(sn8);
-    $("#p9").html(sn9);
-    $("#tebo").html(stes);
-    $("#hyouji").html("Let's Try");
+  $("#p1").html(sn1); $("#p2").html(sn2); $("#p3").html(sn3);
+  $("#p4").html(sn4); $("#p5").html(sn5); $("#p6").html(sn6);
+  $("#p7").html(sn7); $("#p8").html(sn8); $("#p9").html(sn9);
+  $("#tebo").html(stes);
+  $("#hyouji").html("Let's Try");
 }
 
 function hantei() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  if(n1==1&&n2==2&&n3==3&&n4==4&&n5==5&&n6==6&&n7==7&&n8==8) {
-    $("#hyouji").html("SUCCESS");
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text();
+  n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text();
+  n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+
+  // 1〜8まで正しく並んでいるかチェック
+  if(n1=="1"&&n2=="2"&&n3=="3"&&n4=="4"&&n5=="5"&&n6=="6"&&n7=="7"&&n8=="8") {
+    
+    // 【祝】完成時の演出
+    $("#hyouji").html("COMPLETE!")
+               .css("color", "#2ecc71")
+               .css("text-shadow", "0 0 20px #2ecc71");
+
+    // パネルと背景にアニメーション用のクラスを追加（CSS側で定義したもの）
+    $(".panel").addClass("complete-glow");
+    $("#content").addClass("victory-bg");
+
   } else {
-    $("#hyouji").html("Let's Try");
+    // 【道中】まだ揃っていない時の表示
+    $("#hyouji").html("Let's Try")
+               .css("color", "#ff0033") // 元のネオンレッドに戻す
+               .css("text-shadow", "0 0 5px #000, 0 0 10px #ff0033, 0 0 20px #ff0033");
+
+    // アニメーション用クラスを外して通常の状態に戻す
+    $(".panel").removeClass("complete-glow");
+    $("#content").removeClass("victory-bg");
   }
 }
 
-
 function set0() {
-  $("#p1").html(1);
-  $("#p2").html(2);
-  $("#p3").html(3);
-  $("#p4").html(4);
-  $("#p5").html(5);
-  $("#p6").html(6);
-  $("#p7").html(7);
-  $("#p8").html(8);
-  $("#p9").html(9);
+  $("#p1").html(1); $("#p2").html(2); $("#p3").html(3);
+  $("#p4").html(4); $("#p5").html(5); $("#p6").html(6);
+  $("#p7").html(7); $("#p8").html(8); $("#p9").html(9);
 }
 
 function mset() {
   mov = Math.floor(Math.random()*9)+1;
-　//kotae = mov +"." + kotae;
   $("#kotae2").html(mov);
-                switch(mov) {
-                case 1:
-                  pm1();
-                  pm1();
-                  pm1();
-                  pm1();
-                  pm1();
-                  pm1();
-                  pm1();
-                break;
-                case 2:
-                  pm2();
-                  pm2();
-                  pm2();
-                  pm2();
-                  pm2();
-                  pm2();
-                  pm2();
-                break;
-                case 3:
-                  pm3();
-                  pm3();
-                  pm3();
-                  pm3();
-                  pm3();
-                  pm3();
-                  pm3();
-                break;
-                case 4:
-                  pm4();
-                  pm4();
-                  pm4();
-                  pm4();
-                  pm4();
-                  pm4();
-                  pm4();
-                 
-                break;
-                case 5:
-                  pm5();
-                  pm5();
-                  pm5();
-                  pm5();
-                  pm5();
-                  pm5();
-                  pm5();
-                  
-                break;
-                case 6:
-                  pm6();
-                  pm6();
-                  pm6();
-                  pm6();
-                  pm6();
-                  pm6();
-                  pm6();
-                  
-                break;
-                case 7:
-                  pm7();
-                  pm7();
-                  pm7();
-                  pm7();
-                  pm7();
-                  pm7();
-                  pm7();
-                  
-                break;
-                case 8:
-                  pm8();
-                  pm8();
-                  pm8();
-                  pm8();
-                  pm8();
-                  pm8();
-                  pm8();
-                 
-                break;
-                case 9:
-                  pm9();
-                  pm9();
-                  pm9();
-                  pm9();
-                  pm9();
-                  pm9();
-                  pm9();
-                  
-                break;
-              }
+  // あなたの「逆回転7回」による問題生成ロジックを忠実に実行
+  for(var i=0; i<7; i++) {
+    window["pm" + mov]();
+  }
 }
 
-function pm1() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n1 = n5;
-  n5 = n4;
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+// --- 回転ロジック修正版 ---
+
+// 共通の回転順序（外周＋中央の5番を含む大きな円）
+// 時計回り：1 → 2 → 3 → 6 → 9 → 8 → 7 → 4 → (1へ戻る)
+// ※5番が軸でない場合、どこかで5番がこの列に割り込む形になります。
+
+function pm1() { // 1固定：2→3→6→9→8→7→4→5→2
+  n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text();
+  n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  var tmp=n2; n2=n5; n5=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=tmp;
+  reflectAllExcept(1);
 }
 
-function pm2() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n5;
-  n5 = n2;
-  $("#p1").html(n1);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+function pm2() { // 2固定：1→5→3→6→9→8→7→4→1
+  n1=$("#p1").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text();
+  n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  var tmp=n1; n1=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=n5; n5=tmp;
+  reflectAllExcept(2);
 }
 
-function pm3() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n5;
-  n5 = n3;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+function pm3() { // 3固定：2が5へ、5が6へ...（時計回り）
+  n1=$("#p1").text(); n2=$("#p2").text(); n4=$("#p4").text(); n5=$("#p5").text();
+  n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  // 順序: 2→1, 1→4, 4→7, 7→8, 8→9, 9→6, 6→5, 5→2 (逆順で代入して時計回りに)
+  var tmp=n2; n2=n1; n1=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n5; n5=tmp;
+  reflectAllExcept(3);
 }
 
-function pm4() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n5;
-  n5 = n4;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
-}
-function pm5() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n5 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n5;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+function pm4() { // 4固定：1→2→3→6→9→8→7→5→1
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n5=$("#p5").text();
+  n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  var tmp=n1; n1=n5; n5=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=n2; n2=tmp;
+  reflectAllExcept(4);
 }
 
-function pm6() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n6 = n5;
-  n5 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  n9 = n6;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+function pm5() { // 5固定：1→2→3→6→9→8→7→4→1
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text();
+  n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  var tmp=n1; n1=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=n2; n2=tmp;
+  reflectAllExcept(5);
+}
+function pm6() { // 6固定：3が5へ、5が9へ...（時計回り）
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text();
+  n5=$("#p5").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  // 順序: 3→2, 2→1, 1→4, 4→7, 7→8, 8→9, 9→5, 5→3
+  var tmp=n3; n3=n2; n2=n1; n1=n4; n4=n7; n7=n8; n8=n9; n9=n5; n5=tmp;
+  reflectAllExcept(6);
 }
 
-function pm7() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n7 = n5;
-  n5 = n8;
-  n8 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p8").html(n8);
-  $("#p9").html(n9);
+function pm7() { // 7固定：4→1→2→3→6→9→8→5→4
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text();
+  n5=$("#p5").text(); n6=$("#p6").text(); n8=$("#p8").text(); n9=$("#p9").text();
+  var tmp=n4; n4=n5; n5=n8; n8=n9; n9=n6; n6=n3; n3=n2; n2=n1; n1=tmp;
+  reflectAllExcept(7);
 }
 
-function pm8() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n8 = n5;
-  n5 = n9;
-  n9 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  n7 = n8;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p9").html(n9);
+function pm8() { // 8固定：7→4→1→2→3→6→9→5→7
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text();
+  n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n9=$("#p9").text();
+  var tmp=n7; n7=n5; n5=n9; n9=n6; n6=n3; n3=n2; n2=n1; n1=n4; n4=tmp;
+  reflectAllExcept(8);
 }
 
-function pm9() {
-  n1 = $("#p1").text();
-  n2 = $("#p2").text();
-  n3 = $("#p3").text();
-  n4 = $("#p4").text();
-  n5 = $("#p5").text();
-  n6 = $("#p6").text();
-  n7 = $("#p7").text();
-  n8 = $("#p8").text();
-  n9 = $("#p9").text();
-  n9 = n5;
-  n5 = n6;
-  n6 = n3;
-  n3 = n2;
-  n2 = n1;
-  n1 = n4;
-  n4 = n7;
-  n7 = n8;
-  n8 = n9;
-  $("#p1").html(n1);
-  $("#p2").html(n2);
-  $("#p3").html(n3);
-  $("#p4").html(n4);
-  $("#p5").html(n5);
-  $("#p6").html(n6);
-  $("#p7").html(n7);
-  $("#p8").html(n8);
+function pm9() { // 9固定：6が5へ、5が8へ...（時計回り）
+  n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text();
+  n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text();
+  // 順序: 6→3, 3→2, 2→1, 1→4, 4→7, 7→8, 8→5, 5→6
+  var tmp=n6; n6=n3; n3=n2; n2=n1; n1=n4; n4=n7; n7=n8; n8=n5; n5=tmp;
+  reflectAllExcept(9);
 }
-
+// 共通：反映関数（念のためn1〜n9すべてを再定義）
+function reflectAllExcept(fixedId) {
+  var vals = [n1, n2, n3, n4, n5, n6, n7, n8, n9];
+  for(var i=1; i<=9; i++) {
+    if(i !== fixedId) {
+      $("#p"+i).text(vals[i-1]);
+    }
+  }
+}
 $(function () {
   main();
 });
-
-
