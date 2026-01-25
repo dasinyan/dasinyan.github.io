@@ -45,6 +45,11 @@ body {
   text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
   box-shadow: 0 0 5px rgba(0, 242, 255, 0.2), inset 0 0 10px rgba(0, 242, 255, 0.1);
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center; /* 中心を軸に弾ませる */
+  will-change: transform, opacity; /* パフォーマンス向上 */
 }
 
 .panel:active {
@@ -160,4 +165,27 @@ body {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* 1. 親要素を「舞台」にする設定 */
+.puzzle-grid {
+  position: relative; /* 子要素（パネル）を自由な位置に置くための基準 */
+  width: 310px;        /* パネル3枚分(95px*3) + 隙間を考慮したサイズ */
+  height: 310px;
+  margin: 0 auto 15px; /* 中央寄せ */
+}
+
+/* 2. 行（row）の制限を解除 */
+.row {
+  display: block;      /* 元のflexを解除して、重なりを防ぐ */
+  height: 0;           /* 高さをなくして、パネルの配置に干渉させない */
+}
+
+/* 3. パネルを「座標指定」できる状態にする */
+.panel {
+  position: absolute;  /* これで top/left ではなく JSの x/y で動かせるようになります */
+  margin: 0 !important; /* JSで位置制御するため、CSSのマージンは邪魔になります */
+  top: 0;              /* 基準点を左上に固定 */
+  left: 0;
+  transition: none !important; /* CSSのアニメーションはGSAPと競合するのでオフ */
 }
