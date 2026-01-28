@@ -52,9 +52,9 @@
 
   <section>
     <h3 class="label label-mission">[ MISSION ]</h3>
-    <p>0 + [SET]: ターゲット(完成形)を表示<br>
-    1-11 + [SET]: その手数で解ける問題を生成<br>
-    <span class="en">0+[SET]: Target / 1-11+[SET]: Generate N-step puzzle.</span></p>
+    <p>0 + [SET]: 正解の形（HOME）を確認<br>
+    1-11 + [SET]: その手数でHOMEへ導ける問題を生成<br>
+    <span class="en">0+[SET]: View HOME / 1-11+[SET]: Generate N-step puzzle.</span></p>
   </section>
 
   <section>
@@ -66,11 +66,17 @@
  
 
   <footer>
-    <div class="label-hint">[ ANSWER EXAMPLE / 解答例 ]</div>
-    <button type="button" id="kotae">none</button>
-    <button type="button" hidden id="kotae2">none</button>
-    <button type="button" hidden id="flinput">0</button>
-  </footer>
+  <div class="label-hint">[ ANSWER EXAMPLE / 解答例 ]</div>
+  
+  <p style="font-size: 0.85em; color: #888; margin: 5px 0; line-height: 1.4;">
+    ※解答例は、その数字が<strong>「あるべき場所（HOME）」</strong>を示しています。<br>
+    <span style="font-size: 0.9em; opacity: 0.7;">Numbers indicate the target position (HOME) for each piece.</span>
+  </p>
+
+  <button type="button" id="kotae">none</button>
+  <button type="button" hidden id="kotae2">none</button>
+  <button type="button" hidden id="flinput">0</button>
+</footer>
 
 </div>
 <audio id="sound-click" src="sound/click.mp3" preload="auto"></audio>
