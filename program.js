@@ -89,9 +89,22 @@ function main() {
             if (currentNumbers.includes(val)) { isDuplicate = true; break; }
             currentNumbers.push(val);
           }
-          if (isDuplicate) { set0(false); $("#hyouji").html("Duplicate! Reset."); } 
-          else { $("#hyouji").html("Let's Try"); hantei(false); }
-          $("#flinput").html("0"); wmem();
+
+          if (isDuplicate) { 
+            // 【重複時】全てを白紙に戻す
+            set0(false); 
+            $("#tebo").html("0");    // 手数を0に
+            $("#kotae").html("none"); // 解答をクリア
+            $("#hyouji").html("Duplicate! Reset."); 
+          } else { 
+            // 【正常終了時】ここからスタート
+            $("#tebo").html("?"); 
+            $("#kotae").html("?"); 
+            $("#hyouji").html("Let's Try"); 
+            hantei(false); 
+          }
+          $("#flinput").html("0"); 
+          wmem(); // 現在の状態（0や?を含む）を記憶
         }
         break;
     }
