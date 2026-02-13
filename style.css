@@ -104,9 +104,13 @@ body {
 
 .en {
   display: block;
-  font-size: 11px;
-  color: #888;
+  /* フォントサイズを11pxから13px程度に引き上げ */
+  font-size: 14px;
+  /* 色を#888（グレー）から、より白に近い#cccなどへ明るく調整 */
+  color: #ccc; 
   margin-top: 4px;
+  /* 日本語とのバランスを整えるための行間 */
+  line-height: 1.4;
 }
 
 /* 解答エリアの演出 */

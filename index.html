@@ -46,38 +46,61 @@
 <article id="torisetu">
   <section>
     <h3 class="label">[ SYSTEM LOGIC ]</h3>
-    <p>数字をタップ！<br>押されてない数字が時計回りに回るよ<br>
-    <span class="en">Tap any number! The other 8 numbers rotate clockwise.</span></p>
-  </section>
+    <p>
+      数字をタップ！<br>
+押されていない数字が時計回りに回転<br>
+      <span class="en">Tap a number! <br>
+The other 8 number rotate clockwise.</span>
+    </section>
 
   <section>
-    <h3 class="label label-mission">[ MISSION ]</h3>
-    <p>0 + [SET]: 正解の形（HOME）を確認<br>
-    1-11 + [SET]: その手数でHOMEへ導ける問題を生成<br>
-    <span class="en">0+[SET]: View HOME / 1-11+[SET]: Generate N-step puzzle.</span></p>
+    <h3 class="label label-mission">[ MISSION / SET UP ]</h3>
+    <p>
+      赤いボタンで０～１１を選択<br>
+      <span class="en">Use Red Buttons to select 0-11.</span>
+    </p>
+    <p>
+  0 ＋ [SET]：目指す形（＝HOME）を確認<br>
+  <span class="en">0 + [SET]: View the Goal State (=HOME).</span>
+</p>
+<p>
+  １～１１ ＋ [SET]：その手数の問題を出題<br>
+  <span class="en">1-11 + [SET]: Generate N-step puzzle.</span>
+</p>
   </section>
 
   <section>
     <h3 class="label label-command">[ COMMANDS ]</h3>
-    <p>INPUT: 任意入力モード<br>重複時は強制リセット<br>
-    <span class="en">INPUT: Manual mode. Duplicates trigger a reset.</span></p>
+    <p>
+      INPUT：任意入力モード<br>
+（重複時は強制リセット）<br>
+      <span class="en">INPUT: Manual mode<br>
+ (Duplicates trigger a reset).</span>
+    </p>
   </section>
 </article>
- 
 
-  <footer>
-  <div class="label-hint">[ ANSWER EXAMPLE / 解答例 ]</div>
-  
-  <p style="font-size: 0.85em; color: #888; margin: 5px 0; line-height: 1.4;">
-    ※解答例は、その数字が<strong>「あるべき場所（HOME）」</strong>を示しています。<br>
-    <span style="font-size: 0.9em; opacity: 0.7;">Numbers indicate the target position (HOME) for each piece.</span>
-  </p>
+<footer>
+  <section>
+    <h3 class="label">[ ANSWER EXAMPLE ]</h3>
+    <p>
+      画面下部の緑色の数字は、<br>
+ＨＯＭＥでの数字の位置を表しています<br>
+	例えば「1」と表示されている場合は、<br>
+現在どの数字が表示されているかに関係なく、<br>
+左上の数字をタップしてください<br>
+      <span class="en">
+         The green solution numbers at the bottom represent the target position (HOME layout). For example, if it says "1", tap the top-left tile, no matter what number is currently there!
+      </span>
+    </p>
+  </section>
 
-  <button type="button" id="kotae">none</button>
-  <button type="button" hidden id="kotae2">none</button>
-  <button type="button" hidden id="flinput">0</button>
+  <div style="margin-top: 15px;">
+    <button type="button" id="kotae">none</button>
+    <button type="button" hidden id="kotae2">none</button>
+    <button type="button" hidden id="flinput">0</button>
+  </div>
 </footer>
-
 </div>
 <audio id="sound-click" src="sound/click.mp3" preload="auto"></audio>
 <audio id="sound-complete" src="sound/complete.mp3" preload="auto"></audio>
