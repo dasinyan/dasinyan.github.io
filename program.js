@@ -174,6 +174,12 @@ function pm9(s) { n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4
 function wmem() { sn1=$("#p1").text(); sn2=$("#p2").text(); sn3=$("#p3").text(); sn4=$("#p4").text(); sn5=$("#p5").text(); sn6=$("#p6").text(); sn7=$("#p7").text(); sn8=$("#p8").text(); sn9=$("#p9").text(); stes=$("#tebo").text(); }
 function rmem() { n1=sn1; n2=sn2; n3=sn3; n4=sn4; n5=sn5; n6=sn6; n7=sn7; n8=sn8; n9=sn9; reflectAllExcept(null, true, false); $("#tebo").html(stes); }
 function set0(h) { n1=1; n2=2; n3=3; n4=4; n5=5; n6=6; n7=7; n8=8; n9=9; reflectAllExcept(null, true, h); }
-function mset() { mov = Math.floor(Math.random()*9)+1; $("#kotae2").html(mov); for(var i=0; i<7; i++) window["pm"+mov](true); }
-
+function mset() { 
+  mov = Math.floor(Math.random()*9)+1; 
+  // 修正箇所：叩くパネルの位置（mov）ではなく、その位置にある「数字」を取得して記録
+  var panelNumber = $("#p" + mov).text();
+  $("#kotae2").html(panelNumber); 
+  
+  for(var i=0; i<7; i++) window["pm"+mov](true); 
+}
 $(function () { main(); });
