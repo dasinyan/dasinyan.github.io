@@ -6,10 +6,26 @@ var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
 var kotae, mov, flinput;
 var isAnimating = false; // アニメーション中フラグ
 
+
+let cometDelayTimer = null; // ディレイ用のタイマー
+let cometInterval = null;
+
 const pos = {
   1: {x: 0,   y: 0},   2: {x: 103, y: 0},   3: {x: 206, y: 0},
   4: {x: 0,   y: 103}, 5: {x: 103, y: 103}, 6: {x: 206, y: 103},
   7: {x: 0,   y: 206}, 8: {x: 103, y: 206}, 9: {x: 206, y: 206}
+};
+// 各パネルを叩いた時に動く8枚の「位置」の順序
+const cometPaths = {
+  "p1": [5, 2, 3, 6, 9, 8, 7, 4],
+  "p2": [5, 3, 6, 9, 8, 7, 4, 1],
+  "p3": [5, 6, 9, 8, 7, 4, 1, 2],
+  "p4": [5, 1, 2, 3, 6, 9, 8, 7],
+  "p5": [2, 3, 6, 9, 8, 7, 4, 1], // 外周回転
+  "p6": [5, 9, 8, 7, 4, 1, 2, 3],
+  "p7": [5, 4, 1, 2, 3, 6, 9, 8],
+  "p8": [5, 7, 4, 1, 2, 3, 6, 9],
+  "p9": [5, 8, 7, 4, 1, 2, 3, 6]
 };
 
 // ==========================================
@@ -33,12 +49,45 @@ function main() {
   // 初期配置
   for(var i = 1; i <= 9; i++) { gsap.set("#p" + i, { x: pos[i].x, y: pos[i].y }); }
 
+// --- 1. 彗星：ホバー/タッチ開始（修正版） ---
+$('.panel').on('mouseenter touchstart', function(e) {
+  // アニメーション中、またはインプットモードなら何もしない
+  if (isAnimating || $("#flinput").text() === "1") return;
+  
+  const id = $(this).attr("id");
+
+  if (cometDelayTimer) clearTimeout(cometDelayTimer);
+
+  cometDelayTimer = setTimeout(() => {
+    // タイマーが発火した瞬間にもう一度チェック（移動中に発火するのを防ぐ）
+    if (!isAnimating) {
+      startCometLoop(id);
+    }
+  }, 1000); 
+});
+
+// --- 2. 彗星：離れた時（タイマーもクリアする） ---
+$('.panel').on('mouseleave touchend', function(e) {
+  // ループを止める
+  stopCometLoop();
+  // まだループが始まっていないタイマーもキャンセル
+  if (cometDelayTimer) {
+    clearTimeout(cometDelayTimer);
+    cometDelayTimer = null;
+  }
+});
+
+ // 3. 【確定操作】クリックした
   $('.panel').click(function() {
     if (isAnimating) return;
+    
     flinput = $("#flinput").text();
     if (flinput === "0") {
-      playClickSound(); // 操作音
+      stopCometLoop(); // 念のためループを止めて消去
+      playClickSound();
+      
       var id = $(this).attr("id");
+      // 実際の回転ロジックを実行
       switch(id) {
         case "p1": pm1(false); break; case "p2": pm2(false); break;
         case "p3": pm3(false); break; case "p4": pm4(false); break;
@@ -47,6 +96,7 @@ function main() {
         case "p9": pm9(false); break;
       }
     } else if (flinput === "1") {
+      // インプットモード
       var currentVal = parseInt($(this).text());
       $(this).html((currentVal % 9) + 1);
     }
@@ -114,6 +164,79 @@ function main() {
 // ==========================================
 // 補助関数・ロジック
 // ==========================================
+// --- 彗星ループ制御用の新しい補助関数 ---
+// --- 3. 補助関数：スピードを2秒に調整 ---
+function startCometLoop(panelId) {
+  if (cometInterval) return;
+  const path = cometPaths[panelId];
+  if (!path) return;
+
+  let step = 0;
+  const stepTime = 250; // 一周2秒ペース
+
+  cometInterval = setInterval(() => {
+    // 全パネルのクラスをリセット
+    path.forEach(idx => {
+      $("#p" + idx).removeClass("light-1 light-2 light-3 light-4");
+    });
+
+    const len = path.length;
+
+    // --- ここが「出だし」を自然にするポイント ---
+    // stepが0の時は頭だけ、1の時は頭と胴体…という風に段階的に出す
+    
+    // 常に「頭」は表示
+    $("#p" + path[step % len]).addClass("light-1");
+
+    // 1ステップ目以降なら「胴体」を出す
+    if (step >= 1) {
+      $("#p" + path[(step - 1 + len) % len]).addClass("light-2");
+    }
+    // 2ステップ目以降なら「尾」を出す
+    if (step >= 2) {
+      $("#p" + path[(step - 2 + len) % len]).addClass("light-3");
+    }
+    // 3ステップ目以降なら「消え際」を出す
+    if (step >= 3) {
+      $("#p" + path[(step - 3 + len) % len]).addClass("light-4");
+    }
+
+    step++;
+  }, stepTime);
+}
+
+function stopCometLoop() {
+  if (cometInterval) {
+    clearInterval(cometInterval);
+    cometInterval = null;
+  }
+  // 全てのパネルからエフェクトクラスを強制消去（残像残り防止）
+  $(".panel").removeClass("light-1 light-2 light-3 light-4");
+}
+
+async function playComet(panelId) {
+  const path = cometPaths[panelId];
+  if (!path) return;
+
+  const stepTime = 125; // 1000ms / 8枚 = 125ms
+
+  // 11ステップ実行（8枚 + 残像が消えるまでの3枚分）
+  for (let i = 0; i < path.length + 3; i++) {
+    // 全体のクラスを一旦クリア（彗星用のみ）
+    path.forEach(idx => {
+      $("#p" + idx).removeClass("light-1 light-2 light-3 light-4");
+    });
+
+    // 各段階の表示
+    if (path[i])     $("#p" + path[i]).addClass("light-1");     // 頭
+    if (path[i - 1]) $("#p" + path[i - 1]).addClass("light-2"); // 胴
+    if (path[i - 2]) $("#p" + path[i - 2]).addClass("light-3"); // 尾
+    if (path[i - 3]) $("#p" + path[i - 3]).addClass("light-4"); // 消え際
+
+    await new Promise(resolve => setTimeout(resolve, stepTime));
+  }
+}
+
 function clearEffects() {
   $(".panel").removeClass("complete-glow");
   $("#content").removeClass("victory-bg");
@@ -149,12 +272,22 @@ function reflectAllExcept(fixedId, isSilent, isUserAction) {
     if (nextPosIndex !== -1) {
       gsap.to(targetPanel, {
         duration: 0.6, x: pos[nextPosIndex].x, y: pos[nextPosIndex].y, ease: "power2.inOut",
-        onComplete: (function(p, val, idx) {
-          return function() {
-            gsap.set(p, { x: pos[idx].x, y: pos[idx].y }); p.text(val);
-            completedCount++; if (completedCount >= 8) { isAnimating = false; hantei(true); }
-          };
-        })(targetPanel, vals[i-1], i)
+        // reflectAllExcept 関数内の onComplete 部分を修正
+onComplete: (function(p, val, idx) {
+  return function() {
+    gsap.set(p, { x: pos[idx].x, y: pos[idx].y }); 
+    p.text(val);
+    completedCount++; 
+    
+    if (completedCount >= 8) { 
+      // 移動直後にすぐ彗星が出ないよう、少しだけ「isAnimating = true」を維持する
+      setTimeout(() => {
+        isAnimating = false; 
+        hantei(true);
+      }, 500); // 0.5秒のクールダウン（お好みで1000にしてもOK）
+    }
+  };
+})(targetPanel, vals[i-1], i)
       });
     }
   }

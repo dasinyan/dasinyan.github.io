@@ -193,3 +193,27 @@ body {
   left: 0;
   transition: none !important; /* CSSのアニメーションはGSAPと競合するのでオフ */
 }
+
+/* --- 彗星エフェクト用の発光設定 --- */
+.light-1 { 
+  background: #00f2ff !important; 
+  box-shadow: 0 0 25px #00f2ff, 0 0 50px #00f2ff !important;
+  color: #1a1c1d !important;
+  z-index: 10;
+}
+.light-2 { 
+  background: rgba(0, 242, 255, 0.7) !important; 
+  box-shadow: 0 0 15px #00f2ff !important;
+  color: #1a1c1d !important;
+  z-index: 5;
+}
+.light-3 { 
+  background: rgba(0, 242, 255, 0.4) !important; 
+  box-shadow: 0 0 10px #00f2ff !important;
+  z-index: 2;
+}
+.light-4 { 
+  background: rgba(0, 242, 255, 0.15) !important; 
+  opacity: 0.8;
+  z-index: 1;
+}
