@@ -3,7 +3,7 @@
 // ==========================================
 
 // ★ここに追加！コピーした本物のURLを "" の中に入れてください
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxozWDv6VUht5hq1PeK7oUnCCNVrtZ7UaL7AI3StegjK48wP5h2MDfb-5peTUA9dCy0/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxfgF_SvvD0o8NqvaA7fNaz30JMbeNUXpzMsimQkECFac8ZDRaiGkWyhzCurfR3QVls/exec";
 
 var n1, n2, n3, n4, n5, n6, n7, n8, n9;
 var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
