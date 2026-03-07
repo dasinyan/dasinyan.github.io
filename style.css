@@ -217,3 +217,85 @@ body {
   opacity: 0.8;
   z-index: 1;
 }
+/* モード選択：落ち着いたネイビー */
+#mode-select {
+  background: #34495e;
+  border: 1px solid #5d6d7e;
+  flex: 1;
+}
+
+/* スタート：モードセレクトと同じ落ち着いたネイビーへ */
+#challenge-start {
+  background: #34495e; /* #e67e22 から変更 */
+  border: 1px solid #5d6d7e;
+  font-weight: bold;
+  flex: 1.5;
+}
+
+/* ランキング：セットボタン(SEBO)等のシステム系ボタンと統一感を持たせる */
+#rank {
+  background: #2c3e50; /* パープル(#9b59b6)から、より深いダークブルーへ */
+  border: 1px solid #3d4143;
+  margin-top: 5px;
+}
+/* ホバー時の微調整（任意） */
+#c3:active, #rank:active {
+  filter: brightness(1.2);
+  transform: scale(0.98);
+}
+/* style.css に追記 */
+.complete-glow {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  /* 正解時は緑色に光らせる */
+  color: #2ecc71 !important;
+  text-shadow: 0 0 15px #2ecc71;
+}
+/* ランキングモーダルの基本スタイル */
+.modal {
+  display: none; /* 最初は隠す */
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.8);
+}
+
+.modal-content {
+  background-color: #222;
+  margin: 15% auto;
+  padding: 20px;
+  border: 2px solid #f1c40f;
+  width: 80%;
+  max-width: 300px;
+  color: white;
+  text-align: center;
+  border-radius: 10px;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}#rank-list {
+  margin: 15px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 1.2rem;
+}
+.rank-item {
+  padding: 5px;
+  border-bottom: 1px solid #333;
+}
+#rank-average {
+  font-weight: bold;
+  color: #f1c40f;
+  margin-top: 10px;
+}
+#rank-feedback {
+  margin-top: 10px;
+  font-style: italic;
+  font-size: 0.9rem;
+}

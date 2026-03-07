@@ -37,12 +37,22 @@
 
   <nav class="controls">
     <button type="button" class="bot-special" id="tebo">0</button>
+    
     <div class="button-group">
       <button type="button" class="bot" id="sebo">SET</button>
       <button type="button" class="bot" id="resebo">RESET</button>
       <button type="button" class="bot" id="input">INPUT</button>
     </div>
-  </nav>
+
+    <div class="button-group mode-group">
+      <button type="button" class="bot" id="mode-select">MODE: 3</button>
+      <button type="button" class="bot" id="challenge-start">START</button>
+    </div>
+
+    <div class="button-group ranking-group">
+      <button type="button" class="bot" id="rank">GLOBAL RANK</button>
+    </div>
+</nav>
 <article id="torisetu">
   <section>
     <h3 class="label">[ SYSTEM LOGIC ]</h3>
@@ -100,9 +110,24 @@ in order from left to right. <br>
   </div>
 </footer>
 </div>
-<audio id="sound-click" src="sound/click.mp3" preload="auto"></audio>
-<audio id="sound-complete" src="sound/complete.mp3" preload="auto"></audio>
+<audio id="sound-ch3" src="sound/ch3.mp3" preload="auto"></audio>
+<audio id="sound-ch4" src="sound/ch4.mp3" preload="auto"></audio>
 
+<audio id="sound-click" src="sound/click.mp3" preload="auto"></audio>
+<audio id="sound-complete" src="sound/complete.mp3" preload="auto"></audio><div id="rank-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h2 id="modal-title">DAILY TOP 5</h2>
+    <div id="rank-list">
+      </div>
+    <hr>
+    <div id="rank-average">
+      AVERAGE: --s
+    </div>
+    <div id="rank-feedback">
+      </div>
+  </div>
+</div>
 
 </body>
 </html>
