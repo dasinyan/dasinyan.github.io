@@ -1,6 +1,10 @@
 // ==========================================
 // 1. 変数・定数定義
 // ==========================================
+
+// ★ここに追加！コピーした本物のURLを "" の中に入れてください
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxozWDv6VUht5hq1PeK7oUnCCNVrtZ7UaL7AI3StegjK48wP5h2MDfb-5peTUA9dCy0/exec";
+
 var n1, n2, n3, n4, n5, n6, n7, n8, n9;
 var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
 var mov, flinput;
@@ -565,24 +569,90 @@ function setDailyChallenge(steps) {
     for(var i = 1; i <= 9; i++) {
         tempSn[i] = $("#p" + i).text();
     }
-}// ==========================================
-// 5. ランキングシステム
+}
 // ==========================================
+// 5. ランキングシステム（世界ランキング対応版）
+// ==========================================
+
+// 1. スコアをGASに送信する関数
+async function handleRanking(clearTime) {
+    const today = getDailySeed();
+    const saveKey = `cyclogic_scores_${selectedSteps}_${today}`;
+    
+    // ローカルにも保存（バックアップ）
+    let scores = JSON.parse(localStorage.getItem(saveKey) || "[]");
+    scores.push(parseFloat(clearTime));
+    localStorage.setItem(saveKey, JSON.stringify(scores));
+
+    // GASへデータを送信
+    try {
+        await fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors", // GASの仕様上、最初はレスポンスを無視して送る
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                mode: selectedSteps,
+                time: parseFloat(clearTime)
+            })
+        });
+
+        // 送信直後はデータ反映に少し時間がかかるため、0.5秒待ってから表示
+        setTimeout(() => {
+            showGlobalRank(selectedSteps);
+        }, 500);
+
+    } catch (e) {
+        console.error("Ranking Sync Error:", e);
+        showGlobalRank(selectedSteps); // 失敗してもローカル版を表示
+    }
+}
+
+// 2. GASから統計を取得して表示する関数
+async function showGlobalRank(steps) {
+    $("#modal-title").text(`MODE: ${steps} WORLD RANK`);
+    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
+    $("#rank-average").text("AVERAGE: --s");
+    $("#rank-modal").fadeIn(200);
+
+    try {
+        // GASから最新データを取得 (GETリクエスト)
+        const response = await fetch(`${GAS_URL}?mode=${steps}`);
+        const data = await response.json();
+
+        let listHtml = "";
+        if (!data.top5 || data.top5.length === 0) {
+            listHtml = "<div style='padding:20px;'>NO DATA</div>";
+        } else {
+            // 上位5位のリスト作成
+            data.top5.forEach((s, i) => {
+                listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px dotted #555;">
+                                <span style="color:#f1c40f;">${i+1}st</span>
+                                <span style="font-family:'Orbitron';">${parseFloat(s).toFixed(2)}s</span>
+                             </div>`;
+            });
+            // 平均とプレイ人数の更新
+            $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
+        }
+        $("#rank-list").html(listHtml);
+
+    } catch (e) {
+        // 通信失敗時のバックアップ表示（ローカルデータを使用）
+        console.warn("Offline Mode: using local data");
+        const today = getDailySeed();
+        const localScores = JSON.parse(localStorage.getItem(`cyclogic_scores_${steps}_${today}`) || "[]");
+        let listHtml = "<div style='color:#e74c3c; font-size:12px; margin-bottom:10px;'>OFFLINE MODE</div>";
+        
+        localScores.sort((a,b)=>a-b).slice(0,5).forEach((s, i) => {
+            listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:8px;">
+                            <span>${i+1}.</span><span>${s.toFixed(2)}s</span>
+                         </div>`;
+        });
+        $("#rank-list").html(listHtml || "NO LOCAL DATA");
+    }
+}
 function getDailySeed() {
     const d = new Date();
     return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-}
-
-function handleRanking(clearTime) {
-    const today = getDailySeed();
-    const saveKey = `cyclogic_scores_${selectedSteps}_${today}`;
-    let scores = JSON.parse(localStorage.getItem(saveKey) || "[]");
-    scores.push(parseFloat(clearTime));
-    scores.sort((a, b) => a - b);
-    localStorage.setItem(saveKey, JSON.stringify(scores));
-    
-    // 表示関数を呼ぶだけ（音は鳴らさない）
-    showGlobalRank(selectedSteps);
 }
 
 // モード切替時の共通処理（HOME状態を記憶に定着させる）
@@ -596,33 +666,6 @@ function prepareMode(message, color) {
     inputBuffer = "";
     isC3Mode = false;
 }
-function showGlobalRank(steps) {
-    const today = getDailySeed();
-    const saveKey = `cyclogic_scores_${steps}_${today}`;
-    const scores = JSON.parse(localStorage.getItem(saveKey) || "[]");
-    
-    $("#modal-title").text(`MODE: ${steps} TOP 5`);
-    
-    let listHtml = "";
-    if (scores.length === 0) {
-        listHtml = "<div style='padding:20px;'>NO DATA</div>";
-        $("#rank-average").text("AVERAGE: --s");
-    } else {
-        const sorted = [...scores].sort((a, b) => a - b);
-        sorted.slice(0, 5).forEach((s, i) => {
-            listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">
-                            <span>${i+1}.</span>
-                            <span>${s.toFixed(2)}s</span>
-                         </div>`;
-        });
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        $("#rank-average").text(`AVERAGE: ${avg.toFixed(2)}s`);
-    }
-    
-    $("#rank-list").html(listHtml);
-    $("#rank-modal").css("display", "block").hide().fadeIn(200);
-}
-
 $(document).on('click', '.close-modal, #rank-modal', function(e) {
     if (e.target === this || $(e.target).hasClass('close-modal')) {
         $("#rank-modal").fadeOut(200);
