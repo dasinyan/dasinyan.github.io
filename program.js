@@ -3,7 +3,7 @@
 // ==========================================
 
 // ★ここに追加！コピーした本物のURLを "" の中に入れてください
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxfgF_SvvD0o8NqvaA7fNaz30JMbeNUXpzMsimQkECFac8ZDRaiGkWyhzCurfR3QVls/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzw0Ut3NvGApLMZNZwAXL6yFeSFGbb1rYmbId0_tlvYvzuHseeq0l_7V6ZjHfLPsabm/exec";
 
 var n1, n2, n3, n4, n5, n6, n7, n8, n9;
 var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
@@ -554,20 +554,53 @@ function mset() {
     return targetNum; // 「場所」ではなく「数字」を返す
 }
 
-function setDailyChallenge(steps) {
+async function setDailyChallenge(steps) {
     set0(false); 
-    const d = new Date();
-    let seed = (d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) * (steps * 7); 
 
-    for(let i = 0; i < steps; i++) {
-        seed = (seed * 9301 + 49297) % 233280;
-        let move = Math.floor((seed / 233280) * 9) + 1;
-        for(let j = 0; j < 7; j++) { window["pm" + move](true); }
-    }
-    
-    // ★重要：wmem() は呼ばず、一時変数にだけ保存する
-    for(var i = 1; i <= 9; i++) {
-        tempSn[i] = $("#p" + i).text();
+    try {
+        // GASにシード値だけをリクエスト
+        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error("GAS response not ok");
+        }
+        
+        const data = await response.json();
+        let seed = data.seed;  // GASから返ってきた確実なJSTベースのseed値
+
+        // ここから先は元のロジックをほぼそのまま使用
+        for(let i = 0; i < steps; i++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            let move = Math.floor((seed / 233280) * 9) + 1;
+            for(let j = 0; j < 7; j++) {
+                window["pm" + move](true);
+            }
+        }
+        
+        // 一時変数に保存（元のまま）
+        for(var i = 1; i <= 9; i++) {
+            tempSn[i] = $("#p" + i).text();
+        }
+
+    } catch (e) {
+        console.error("GASシード取得エラー、フォールバックします", e);
+        
+        // フォールバック：元のクライアント側計算（一時的に残す）
+        const d = new Date();
+        let seed = (d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) * (steps * 7);
+
+        for(let i = 0; i < steps; i++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            let move = Math.floor((seed / 233280) * 9) + 1;
+            for(let j = 0; j < 7; j++) {
+                window["pm" + move](true);
+            }
+        }
+        
+        for(var i = 1; i <= 9; i++) {
+            tempSn[i] = $("#p" + i).text();
+        }
     }
 }
 // ==========================================
