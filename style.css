@@ -252,6 +252,21 @@ body {
   text-shadow: 0 0 15px #2ecc71;
 }
 /* ランキングモーダルの基本スタイル */
+
+/* style.css に追記すると見た目が良くなります */
+.tab-btn {
+  background: #2c3e50;
+  color: #95a5a6;
+  border: 1px solid #34495e;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+/* style.css に追記 */
+.tab-btn.active {
+    background-color: #3498db !important;
+    color: white !important;
+}
 .modal {
   display: none; /* 最初は隠す */
   position: fixed;

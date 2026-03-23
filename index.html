@@ -132,12 +132,22 @@ in order from left to right. <br>
   <div class="modal-content">
     <span class="close-modal">&times;</span>
     <h2 id="modal-title">DAILY TOP 5</h2>
+
+    <div class="rank-tabs" style="display:flex; justify-content:center; gap:5px; margin-bottom:15px;">
+      <button type="button" class="tab-btn active" onclick="changeRankDay(0)" style="flex:1; padding:8px; font-family:'Orbitron'; font-size:10px; cursor:pointer;">TODAY</button>
+      <button type="button" class="tab-btn" onclick="changeRankDay(1)" style="flex:1; padding:8px; font-family:'Orbitron'; font-size:10px; cursor:pointer;">YESTERDAY</button>
+      <button type="button" class="tab-btn" onclick="changeRankDay(2)" style="flex:1; padding:8px; font-family:'Orbitron'; font-size:10px; cursor:pointer;">2 DAYS AGO</button>
+    </div>
+
     <div id="rank-list">
       </div>
+
     <hr>
+
     <div id="rank-average">
       AVERAGE: --s
     </div>
+
     <div id="rank-feedback">
       </div>
   </div>

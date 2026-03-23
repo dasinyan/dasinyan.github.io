@@ -25,6 +25,13 @@ const pos = {
 
 var challengeTimer = null; // 【追加】チャレンジ開始の遅延用
 
+// --- [A] 冒頭の変数定義エリアに追加 ---
+let userId = localStorage.getItem("cyclogic_user_id") || (() => {
+    const id = "U-" + Math.random().toString(36).substring(2, 10);
+    localStorage.setItem("cyclogic_user_id", id);
+    return id;
+})();
+let currentDayOffset = 0; // 現在表示中の日（0=今日, 1=昨日...）
 
 // 彗星エフェクト用
 let cometDelayTimer = null;
@@ -240,7 +247,9 @@ case "input":
                 rmem(); 
                 break;
 
-            case "rank": showGlobalRank(selectedSteps); break;
+            case "rank": 
+    openGlobalRank(); // showGlobalRank を直接呼ばず、専用の開始関数を通す
+    break;
         }
     });
 }
@@ -538,7 +547,10 @@ function rmem() {
     $("#hyouji").html("Let's Try").css("color", ""); 
     for (var i = 1; i <= 9; i++) { $("#p" + i).text(window["n" + i]); }
     reflectAllExcept(null, true);
-}function set0(h) { n1=1; n2=2; n3=3; n4=4; n5=5; n6=6; n7=7; n8=8; n9=9; reflectAllExcept(null, true); }
+}
+
+function set0(h) { n1=1; n2=2; n3=3; n4=4; n5=5; n6=6; n7=7; n8=8; n9=9; reflectAllExcept(null, true); }
+
 function mset() { 
     // 1〜9の「場所」をランダムに決定
     var mov = Math.floor(Math.random() * 9) + 1; 
@@ -607,80 +619,121 @@ async function setDailyChallenge(steps) {
 // 5. ランキングシステム（世界ランキング対応版）
 // ==========================================
 
-// 1. スコアをGASに送信する関数
+// --- [E] handleRanking 関数のアップデート ---
 async function handleRanking(clearTime) {
-    const today = getDailySeed();
-    const saveKey = `cyclogic_scores_${selectedSteps}_${today}`;
-    
-    // ローカルにも保存（バックアップ）
-    let scores = JSON.parse(localStorage.getItem(saveKey) || "[]");
-    scores.push(parseFloat(clearTime));
-    localStorage.setItem(saveKey, JSON.stringify(scores));
+    // ログ送信：スコア投稿
+    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime) });
 
-    // GASへデータを送信
+    // 反映待ちをしてからランキング表示（今日分）
+    setTimeout(() => {
+        changeRankDay(0);
+    }, 600);
+}
+// --- [B] ログ送信用の共通関数 ---
+async function sendLog(action, mode, extra = {}) {
     try {
         await fetch(GAS_URL, {
             method: "POST",
-            mode: "no-cors", // GASの仕様上、最初はレスポンスを無視して送る
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                mode: selectedSteps,
-                time: parseFloat(clearTime)
+                action: action,
+                mode: mode,
+                userId: userId,
+                ...extra
             })
         });
-
-        // 送信直後はデータ反映に少し時間がかかるため、0.5秒待ってから表示
-        setTimeout(() => {
-            showGlobalRank(selectedSteps);
-        }, 500);
-
-    } catch (e) {
-        console.error("Ranking Sync Error:", e);
-        showGlobalRank(selectedSteps); // 失敗してもローカル版を表示
-    }
+    } catch (e) { console.error("Log Error:", e); }
 }
 
-// 2. GASから統計を取得して表示する関数
-async function showGlobalRank(steps) {
-    $("#modal-title").text(`MODE: ${steps} WORLD RANK`);
-    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
-    $("#rank-average").text("AVERAGE: --s");
-    $("#rank-modal").fadeIn(200);
+// --- [C] 日付切り替えボタンの処理（上書き） ---
+function changeRankDay(offset) {
+    currentDayOffset = offset;
+    // クラスを付け替えるだけ（色は CSS が担当する）
+    $(".tab-btn").removeClass("active");
+    $(`.tab-btn:eq(${offset})`).addClass("active");
+    
+    showGlobalRank(selectedSteps, offset);
+}
 
+// ランキングを新しく開く時の専用関数（program.js のどこかに追加）
+function openGlobalRank() {
+    currentDayOffset = 0; 
+    // changeRankDay で直接付与した背景色スタイルを強制解除
+    $(".tab-btn").removeClass("active").css({"background": "", "color": ""}); 
+    showGlobalRank(selectedSteps, 0); 
+}
+
+// ランキング表示・取得のメイン関数
+async function showGlobalRank(steps, dayOffset = null) {
+    // 1. オフセットの決定
+    if (dayOffset === null) {
+        currentDayOffset = 0; 
+    } else {
+        currentDayOffset = dayOffset;
+    }
+
+    // 2. モーダルの表示準備
+    $("#rank-modal").fadeIn(200);
+    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
+
+    // 3. 全てのタブを一旦リセット（★重要：色指定ではなくクラスのみ操作）
+    $(".tab-btn").removeClass("active");
+
+    // 4. 日付ラベルの更新と、該当タブの点灯
+    for (let i = 0; i < 3; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        
+        const label = (i === 0) ? "TODAY" : `${d.getMonth() + 1}/${d.getDate()}`;
+        const $targetTab = $(`.tab-btn:eq(${i})`);
+        
+        $targetTab.text(label);
+        
+        // 現在表示中の日付タブにだけ active クラスを付与
+        if (i === currentDayOffset) {
+            $targetTab.addClass("active");
+        }
+    }
+
+    // --- ここから先は GAS への通信処理（前回のままでOKです） ---
+    // (以下、GASへのリクエスト処理へ続く...)
+    // 4. GASへデータをリクエスト
     try {
-        // GASから最新データを取得 (GETリクエスト)
-        const response = await fetch(`${GAS_URL}?mode=${steps}`);
+        // ログ送信（今日を表示する時だけ「閲覧」ログを記録）
+        if (currentDayOffset === 0) sendLog("viewRank", steps);
+
+        // APIリクエスト（アクション名、モード、オフセットを送信）
+        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${currentDayOffset}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
 
+        // 5. データの流し込み
         let listHtml = "";
         if (!data.top5 || data.top5.length === 0) {
-            listHtml = "<div style='padding:20px;'>NO DATA</div>";
+            listHtml = `<div style='padding:30px; color:#95a5a6; font-size:14px;'>NO DATA<br><small>(${data.date})</small></div>`;
+            $("#rank-average").html("AVERAGE: --s");
         } else {
             // 上位5位のリスト作成
             data.top5.forEach((s, i) => {
-                listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px dotted #555;">
-                                <span style="color:#f1c40f;">${i+1}st</span>
-                                <span style="font-family:'Orbitron';">${parseFloat(s).toFixed(2)}s</span>
-                             </div>`;
+                listHtml += `
+                    <div class="rank-item" style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px dotted #555;">
+                        <span style="color:#f1c40f; font-family:'Orbitron';">${i + 1}st</span>
+                        <span style="font-family:'Orbitron'; color:#ecf0f1;">${parseFloat(s).toFixed(2)}s</span>
+                    </div>`;
             });
             // 平均とプレイ人数の更新
             $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
         }
+        
         $("#rank-list").html(listHtml);
+        $("#modal-title").text(`MODE: ${steps} RANK`);
 
     } catch (e) {
-        // 通信失敗時のバックアップ表示（ローカルデータを使用）
-        console.warn("Offline Mode: using local data");
-        const today = getDailySeed();
-        const localScores = JSON.parse(localStorage.getItem(`cyclogic_scores_${steps}_${today}`) || "[]");
-        let listHtml = "<div style='color:#e74c3c; font-size:12px; margin-bottom:10px;'>OFFLINE MODE</div>";
-        
-        localScores.sort((a,b)=>a-b).slice(0,5).forEach((s, i) => {
-            listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:8px;">
-                            <span>${i+1}.</span><span>${s.toFixed(2)}s</span>
-                         </div>`;
-        });
-        $("#rank-list").html(listHtml || "NO LOCAL DATA");
+        console.error("Rank Fetch Error:", e);
+        $("#rank-list").html("<div style='padding:20px; color:#e74c3c;'>CONNECTION ERROR</div>");
     }
 }
 function getDailySeed() {
