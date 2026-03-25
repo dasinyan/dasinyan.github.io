@@ -1,17 +1,14 @@
 // ==========================================
 // 1. 変数・定数定義
 // ==========================================
-
-// ★ここに追加！コピーした本物のURLを "" の中に入れてください
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzw0Ut3NvGApLMZNZwAXL6yFeSFGbb1rYmbId0_tlvYvzuHseeq0l_7V6ZjHfLPsabm/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby3IYeuqZg56I100PiEuc5JGg1Uy3EfxBReYawxw6ufP3avsGvc4gSAxPNjXOoddjXe/exec";
 
 var n1, n2, n3, n4, n5, n6, n7, n8, n9;
 var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
-var mov, flinput;
 var isAnimating = false; 
-var saveKotae = "none"; // 【追加】答えを保存する変数
+var saveKotae = "none";
 
-var tempSn = Array(10).fill(""); // チャレンジ問題の一次保存用
+var tempSn = Array(10).fill("");
 let selectedSteps = 3; 
 let isC3Mode = false; 
 let inputBuffer = ""; 
@@ -23,241 +20,175 @@ const pos = {
   7: {x: 0,   y: 206}, 8: {x: 103, y: 206}, 9: {x: 206, y: 206}
 };
 
-var challengeTimer = null; // 【追加】チャレンジ開始の遅延用
+var challengeTimer = null;
 
-// --- [A] 冒頭の変数定義エリアに追加 ---
 let userId = localStorage.getItem("cyclogic_user_id") || (() => {
     const id = "U-" + Math.random().toString(36).substring(2, 10);
     localStorage.setItem("cyclogic_user_id", id);
     return id;
 })();
-let currentDayOffset = 0; // 現在表示中の日（0=今日, 1=昨日...）
+let currentDayOffset = 0;
 
 // 彗星エフェクト用
 let cometDelayTimer = null;
 let cometInterval = null;
-
-// 各パネルを中心にした8マスの回転順序（時計回り）
 const cometPaths = {
-  "p1": [5, 2, 3, 6, 9, 8, 7, 4],
-  "p2": [5, 3, 6, 9, 8, 7, 4, 1],
-  "p3": [5, 6, 9, 8, 7, 4, 1, 2],
-  "p4": [5, 1, 2, 3, 6, 9, 8, 7],
-  "p5": [2, 3, 6, 9, 8, 7, 4, 1],  // センターは外周回転
-  "p6": [5, 9, 8, 7, 4, 1, 2, 3],
-  "p7": [5, 4, 1, 2, 3, 6, 9, 8],
-  "p8": [5, 7, 4, 1, 2, 3, 6, 9],
-  "p9": [5, 8, 7, 4, 1, 2, 3, 6]
+  "p1": [5, 2, 3, 6, 9, 8, 7, 4], "p2": [5, 3, 6, 9, 8, 7, 4, 1], "p3": [5, 6, 9, 8, 7, 4, 1, 2],
+  "p4": [5, 1, 2, 3, 6, 9, 8, 7], "p5": [2, 3, 6, 9, 8, 7, 4, 1], "p6": [5, 9, 8, 7, 4, 1, 2, 3],
+  "p7": [5, 4, 1, 2, 3, 6, 9, 8], "p8": [5, 7, 4, 1, 2, 3, 6, 9], "p9": [5, 8, 7, 4, 1, 2, 3, 6]
 };
 
 // ==========================================
-// 2. 音声再生
+// 2. 音声・演出処理
 // ==========================================
-function playClickSound() {
-    const s = document.getElementById("sound-click");
-    if (s) { s.currentTime = 0; s.play().catch(e => {}); }
-}
-
-function playCompleteSound() {
-    const s = document.getElementById("sound-complete");
-    if (s) { s.currentTime = 0; s.play().catch(e => {}); }
-}
-
+function playClickSound() { const s = document.getElementById("sound-click"); if (s) { s.currentTime = 0; s.play().catch(e => {}); } }
+function playCompleteSound() { const s = document.getElementById("sound-complete"); if (s) { s.currentTime = 0; s.play().catch(e => {}); } }
 function playChallengeVoice(steps) {
     const s = document.getElementById("sound-ch" + steps);
     if (s) { s.currentTime = 0; s.play().catch(e => playCompleteSound()); } 
     else { playCompleteSound(); }
 }
 
+function startCometLoop(panelId) {
+  if (cometInterval) return;
+  const path = cometPaths[panelId];
+  if (!path) return;
+  let step = 0;
+  cometInterval = setInterval(() => {
+    path.forEach(idx => $("#p" + idx).removeClass("light-1 light-2 light-3 light-4"));
+    const len = path.length;
+    $("#p" + path[step % len]).addClass("light-1");
+    if (step >= 1) $("#p" + path[(step - 1 + len) % len]).addClass("light-2");
+    if (step >= 2) $("#p" + path[(step - 2 + len) % len]).addClass("light-3");
+    if (step >= 3) $("#p" + path[(step - 3 + len) % len]).addClass("light-4");
+    step++;
+  }, 250);
+}
+
+function stopCometLoop() {
+  if (cometInterval) { clearInterval(cometInterval); cometInterval = null; }
+  $(".panel").removeClass("light-1 light-2 light-3 light-4");
+}
+
+function clearEffects() {
+    $(".panel").removeClass("complete-glow");
+    $("#content").removeClass("victory-bg");
+    $("#hyouji").css("color", "").css("text-shadow", "").html("Let's Try");
+}
+
 // ==========================================
-// 3. メイン処理
+// 3. メイン処理 & イベント
 // ==========================================
 function main() { 
-    // 【初期化】起動時のHOME状態を最初のセーブポイントとして刻む
     set0(false);
     $("#tebo").html("0");
     wmem(); 
-// 数字パネルのホバー/タッチ開始
-$('.panel').on('mouseenter touchstart', function(e) {
-  if (isAnimating || isC3Mode || $("#flinput").text() === "1") return;
 
-  const id = $(this).attr("id");
+    $('.panel').on('mouseenter touchstart', function(e) {
+      if (isAnimating || isC3Mode || $("#flinput").text() === "1") return;
+      const id = $(this).attr("id");
+      if (cometDelayTimer) clearTimeout(cometDelayTimer);
+      cometDelayTimer = setTimeout(() => {
+        if (!isAnimating && !isC3Mode && $("#flinput").text() === "0") startCometLoop(id);
+      }, 800);
+    });
 
-  if (cometDelayTimer) clearTimeout(cometDelayTimer);
+    $('.panel').on('mouseleave touchend touchcancel', function(e) {
+      if (cometDelayTimer) { clearTimeout(cometDelayTimer); cometDelayTimer = null; }
+      stopCometLoop();
+    });
 
-  cometDelayTimer = setTimeout(() => {
-    if (!isAnimating && !isC3Mode && $("#flinput").text() === "0") {
-      startCometLoop(id);
-    }
-  }, 800); // 0.8秒で発火（好みで1000でも）
-});
+    $('.panel').click(async function() {
+        stopCometLoop();
+        if (isAnimating) return;
 
-// ホバーアウト / タッチ終了
-$('.panel').on('mouseleave touchend touchcancel', function(e) {
-  if (cometDelayTimer) {
-    clearTimeout(cometDelayTimer);
-    cometDelayTimer = null;
-  }
-  stopCometLoop();
-});
+        const flinputVal = $("#flinput").text();
+        const clickedNum = $(this).text();
 
-   
-    // 数字パネルのクリック処理
-$('.panel').click(async function() {
-    stopCometLoop();           // 彗星エフェクトを即停止
-    if (isAnimating) return;   // アニメ中は無視
+        if (flinputVal === "1") {
+            playClickSound();
+            $(this).html((parseInt(clickedNum) % 9) + 1);
+            return;
+        }
 
-    const flinputVal = $("#flinput").text();
-    const clickedNum = $(this).text();   // クリックしたパネルの数字（チャレンジ用）
-
-    // ────────────────────────────────────────────────
-    // 1. インプットモード（flinput === "1"）
-    // ────────────────────────────────────────────────
-    if (flinputVal === "1") {
-        playClickSound();
-        const currentVal = parseInt(clickedNum);
-        $(this).html((currentVal % 9) + 1);   // 1→2→…→9→1 のループ
-        return;   // ここで終了 → 手数は絶対増やさない
-    }
-
-    // ────────────────────────────────────────────────
-    // 2. チャレンジモード（isC3Mode === true）
-    // ────────────────────────────────────────────────
-    if (isC3Mode) {
-        // チャレンジ中は「数字の一括入力」のみ許可
-        // 実際のスライド（pm関数）は後でまとめて実行
-        if (flinputVal === "0") {
+        if (isC3Mode) {
             playClickSound();
             inputBuffer += clickedNum;
             $("#hyouji").text(inputBuffer.padEnd(selectedSteps, "-"));
-
             if (inputBuffer.length === selectedSteps) {
                 isAnimating = true;
                 const commands = [...inputBuffer];
                 inputBuffer = "";
-
                 for (let cmd of commands) {
                     let targetId = "";
                     for (let i = 1; i <= 9; i++) {
-                        if ($("#p" + i).text() === cmd) {
-                            targetId = i;
-                            break;
-                        }
+                        if ($("#p" + i).text() === cmd) { targetId = i; break; }
                     }
                     if (targetId) {
                         window["pm" + targetId](false);
                         await new Promise(r => setTimeout(r, 700));
                     }
                 }
-
                 isAnimating = false;
                 hantei(true);
             }
+            return;
         }
-        return;   // チャレンジ中はここで終了 → 手数は増やさない
-    }
 
-    // ────────────────────────────────────────────────
-    // 3. 通常モード（ここまで来たら通常操作）
-    // ────────────────────────────────────────────────
-    // ※ flinput === "0" かつ !isC3Mode の場合のみ到達
-    playClickSound();
+        playClickSound();
+        window["pm" + $(this).attr("id").replace("p", "")](false);
+        setTimeout(() => hantei(true), 700);
+    });
 
-    const id = $(this).attr("id");
-    const panelNum = id.replace("p", "");   // "p1" → "1"
-
-    // 回転実行
-    window["pm" + panelNum](false);
-
-    // 手数カウントアップ（通常モード専用）←要らない？
-   // let currentTes = parseInt($("#tebo").text()) || 0;
-   // $("#tebo").html(currentTes + 1);
-
-    // 判定を少し遅らせてアニメーション完了後に
-    setTimeout(() => {
-        hantei(true);
-    }, 700);
-});
-
-    // ボタン類の処理
     $('.bot, .bot-special').click(function() {
         if (isAnimating) return;
         playClickSound();
         var btnId = $(this).attr("id");
 
         switch(btnId) {
-		case "tebo":
-
+            case "tebo":
                 if ($("#flinput").text() === "0") {
-
                     var currentTes = $("#tebo").text();
-
                     var nextTes = (currentTes === "?") ? 1 : (parseInt(currentTes) + 1) % 12;
-
                     $("#tebo").html(nextTes);
-
                 }
-
                 break;
             case "mode-select":
                 selectedSteps = (selectedSteps === 3) ? 4 : 3;
                 $(this).html("MODE: " + selectedSteps);
                 break;
-
             case "challenge-start":
-                isC3Mode = false;
-                isInputMode = false;
-                $("#flinput").html("0");
                 prepareMode("READY?", "#f1c40f");
-                
                 isAnimating = true; 
                 $("#tebo").html(selectedSteps);
                 setDailyChallenge(selectedSteps); 
-                
-                // 【修正】タイマーを変数に格納する
                 if (challengeTimer) clearTimeout(challengeTimer);
                 challengeTimer = setTimeout(() => {
                     $("#hyouji").html("- ".repeat(selectedSteps).trim());
                     startTime = performance.now(); 
                     isC3Mode = true; 
                     isAnimating = false; 
-                    challengeTimer = null; // 実行完了
+                    challengeTimer = null;
                 }, 1000);
                 break;
-
-            case "sebo":
-    executeSet(); // すべてのモードから通常へ戻り、問題を生成・保存
-    break;
-
-case "input":
-    if ($("#flinput").text() === "0") {
-        // インプット開始
-        isC3Mode = false;
-        prepareMode("Input mode", "#e67e22");
-        $("#flinput").html("1");
-        $("#tebo").html("?");
-    } else {
-        // インプット終了（確定）
-        executeSet(); 
-    }
-    break;
-
-            case "resebo": // リセットボタン：全モードから通常へ強制帰還＆ロード
-                clearEffects(); 
-                rmem(); 
+            case "sebo": executeSet(); break;
+            case "input":
+                if ($("#flinput").text() === "0") {
+                    prepareMode("Input mode", "#e67e22");
+                    $("#flinput").html("1");
+                    $("#tebo").html("?");
+                } else { executeSet(); }
                 break;
-
-            case "rank": 
-    openGlobalRank(); // showGlobalRank を直接呼ばず、専用の開始関数を通す
-    break;
+            case "resebo": clearEffects(); rmem(); break;
+            case "rank": openGlobalRank(); break;
         }
     });
 }
 
-// --- セットボタンの共通ロジック ---
-// セットボタンの共通ロジック（問題生成 & セーブ & 通常モード移行）
+// ==========================================
+// 4. ロジック関数
+// ==========================================
 function executeSet() {
-    // 1. 状態のキャプチャと解除
     const isInputNow = ($("#flinput").text() === "1");
     isC3Mode = false;
     inputBuffer = "";
@@ -265,102 +196,191 @@ function executeSet() {
     $("#flinput").html("0");
     clearEffects();
 
-    // 2. インプットモード出口のロジック（ここが最優先）
     if (isInputNow) {
         if (!checkInvalid()) {
-            // 【成功】重複なし：今の盤面をそのまま維持する（set0は絶対に呼ばない）
             $("#tebo").html("?"); 
             $("#kotae").text("none");
-            // ※ここで reflection を「静止状態」で行うため、変数を同期
             n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text();
             n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text();
             n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text();
         } else {
-            // 【失敗】重複あり：掟に基づき HOME へ強制送還
             set0(false);
             $("#tebo").html("0");
             $("#kotae").text("none");
         }
     } else {
-        // 3. 通常時・チャレンジ中からの「セット（問題生成）」
         let teboText = $("#tebo").text();
         let loopCount = (teboText === "?" || teboText === "0") ? 0 : parseInt(teboText);
-
         if (loopCount === 0) {
             set0(false);
             $("#tebo").html("0");
             $("#kotae").text("none");
         } else {
-            // 新問題を生成するために一旦 HOME にしてからシャッフル
             set0(false); 
             let history = [];
-            for (var i = 0; i < loopCount; i++) { 
-                history.push(mset()); 
-            }
+            for (var i = 0; i < loopCount; i++) { history.push(mset()); }
             $("#kotae").text(history.reverse().join(" "));
         }
     }
-
-    // 4. 最後に今の状態（インプットした盤面、または生成した問題）をセーブ
     wmem(); 
-    
-    // 5. 表示更新
-    $("#hyouji").html("Let's Try").css("color", "");
+    $("#hyouji").html("Let's Try");
     reflectAllExcept(null, true); 
-}// 重複チェック補助
+}
+
 function checkInvalid() {
     var checkArr = [];
     for(var i = 1; i <= 9; i++) { checkArr.push($("#p" + i).text()); }
-    for(var n = 1; n <= 9; n++) {
-        if(!checkArr.includes(String(n))) return true;
-    }
+    for(var n = 1; n <= 9; n++) { if(!checkArr.includes(String(n))) return true; }
     return false;
 }
 
+function hantei(showCelebration) {
+    var n = [];
+    for (var i = 1; i <= 9; i++) { n[i] = $("#p" + i).text(); }
+    const isComplete = (n[1] == "1" && n[2] == "2" && n[3] == "3" && n[4] == "4" && n[5] == "5" && n[6] == "6" && n[7] == "7" && n[8] == "8");
+
+    if (isComplete) {
+        if (showCelebration) {
+            if (isC3Mode) { playChallengeVoice(selectedSteps); } else { playCompleteSound(); }
+            $(".panel").addClass("complete-glow");
+            $("#content").addClass("victory-bg");
+            let clearTime = 0;
+            if (startTime > 0) {
+                clearTime = ((performance.now() - startTime) / 1000).toFixed(2);
+                if (isC3Mode) {
+                    $("#hyouji").html(clearTime + "s").css("color", "#2ecc71");
+                    handleRanking(clearTime);
+                } else {
+                    $("#hyouji").html("COMPLETE!").css("color", "#2ecc71");
+                }
+            }
+            setTimeout(() => { startTime = 0; isC3Mode = false; inputBuffer = ""; }, 1000);
+        }
+    } else if (isC3Mode && showCelebration && !isAnimating) {
+        isAnimating = true;
+        $("#hyouji").html("MISS!").css("color", "#ff4757");
+        setTimeout(() => {
+            for (var i = 1; i <= 9; i++) { window["n" + i] = tempSn[i]; }
+            $("#hyouji").html("- ".repeat(selectedSteps).trim()).css("color", ""); 
+            inputBuffer = "";
+            reflectAllExcept(null, true);
+            isAnimating = false; 
+        }, 800);
+    } else if (!isC3Mode) {
+        clearEffects();
+    }
+}
+
 // ==========================================
-// 4. 補助関数
+// 5. 通信・ランキング
+// ==========================================
+async function setDailyChallenge(steps) {
+    set0(false); 
+    try {
+        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}&dayOffset=0&userId=${userId}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        let seed = data.seed; 
+        for(let i = 0; i < steps; i++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            let move = Math.floor((seed / 233280) * 9) + 1;
+            for(let j = 0; j < 7; j++) { window["pm" + move](true); }
+        }
+        for(var i = 1; i <= 9; i++) { tempSn[i] = $("#p" + i).text(); }
+    } catch (e) { console.error("Seed Fetch Error:", e); }
+}
+
+async function handleRanking(clearTime) {
+    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime) });
+    setTimeout(() => { changeRankDay(0); }, 600);
+}
+
+async function sendLog(action, mode, extra = {}) {
+    try {
+        await fetch(GAS_URL, {
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, mode, userId, ...extra })
+        });
+    } catch (e) { console.error("Log Error:", e); }
+}
+
+function openGlobalRank() {
+    currentDayOffset = 0; 
+    $(".tab-btn").removeClass("active").css({"background": "", "color": ""}); 
+    showGlobalRank(selectedSteps, 0); 
+}
+
+function changeRankDay(offset) {
+    currentDayOffset = offset;
+    $(".tab-btn").removeClass("active");
+    $(`.tab-btn:eq(${offset})`).addClass("active");
+    showGlobalRank(selectedSteps, offset);
+}
+
+async function showGlobalRank(steps, dayOffset = 0) {
+    currentDayOffset = dayOffset;
+    $("#rank-modal").fadeIn(200);
+    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
+    
+    for (let i = 0; i < 3; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const label = (i === 0) ? "TODAY" : `${d.getMonth() + 1}/${d.getDate()}`;
+        const $targetTab = $(`.tab-btn:eq(${i})`);
+        $targetTab.text(label);
+        if (i === currentDayOffset) $targetTab.addClass("active");
+        else $targetTab.removeClass("active");
+    }
+
+    try {
+        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${currentDayOffset}&userId=${userId}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        let listHtml = "";
+        if (!data.top5 || data.top5.length === 0) {
+            listHtml = `<div style='padding:30px; color:#95a5a6;'>NO DATA<br><small>(${data.date})</small></div>`;
+            $("#rank-average").html("AVERAGE: --s");
+        } else {
+            data.top5.forEach((s, i) => {
+                listHtml += `<div class="rank-item" style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px dotted #555;">
+                    <span style="color:#f1c40f;">${i + 1}st</span>
+                    <span style="color:#ecf0f1;">${parseFloat(s).toFixed(2)}s</span>
+                </div>`;
+            });
+            $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
+        }
+        $("#rank-list").html(listHtml);
+        $("#modal-title").text(`MODE: ${steps} RANK`);
+    } catch (e) { $("#rank-list").html("<div style='padding:20px; color:#e74c3c;'>CONNECTION ERROR</div>"); }
+}
+
+// ==========================================
+// 6. ユーティリティ & 互換性
 // ==========================================
 function reflectAllExcept(fixedId, isSilent) {
     var vals = [n1, n2, n3, n4, n5, n6, n7, n8, n9];
-    
-    // 【修正】ここでの自動消去を削除。
-    // ユーザーが操作しても「答え」は表示されたままにします。
-
     if (isSilent) {
         for (var i = 1; i <= 9; i++) {
             gsap.set("#p" + i, { x: pos[i].x, y: pos[i].y });
             $("#p" + i).text(vals[i - 1]);
         }
-        isAnimating = false; 
-        return;
+        isAnimating = false; return;
     }
-    
-    isAnimating = true; 
-    let movingCount = 0;
-    let finishedCount = 0;
-
+    isAnimating = true; let movingCount = 0; let finishedCount = 0;
     for (let i = 1; i <= 9; i++) {
         let targetPanel = $("#p" + i);
         let nextPosIndex = -1;
-        for (let j = 0; j < 9; j++) { 
-            if (String(vals[j]) === targetPanel.text()) { 
-                nextPosIndex = j + 1; 
-                break; 
-            } 
-        }
-        
+        for (let j = 0; j < 9; j++) { if (String(vals[j]) === targetPanel.text()) { nextPosIndex = j + 1; break; } }
         let currentX = gsap.getProperty(targetPanel[0], "x");
         let currentY = gsap.getProperty(targetPanel[0], "y");
-        
         if (nextPosIndex !== -1 && (currentX !== pos[nextPosIndex].x || currentY !== pos[nextPosIndex].y)) {
             movingCount++;
             gsap.to(targetPanel, {
                 duration: 0.6, x: pos[nextPosIndex].x, y: pos[nextPosIndex].y, ease: "power2.inOut",
                 onComplete: () => {
-                    gsap.set(targetPanel, { x: pos[i].x, y: pos[i].y }); 
+                    gsap.set(targetPanel, { x: pos[i].x, y: pos[i].y });
                     targetPanel.text(vals[i - 1]);
                     finishedCount++;
-                    if (finishedCount === movingCount) { isAnimating = false; }
+                    if (finishedCount === movingCount) isAnimating = false;
                 }
             });
         } else {
@@ -368,140 +388,37 @@ function reflectAllExcept(fixedId, isSilent) {
             targetPanel.text(vals[i - 1]);
         }
     }
-    if (movingCount === 0) { isAnimating = false; }
-}
-function clearEffects() {
-    $(".panel").removeClass("complete-glow");
-    $("#content").removeClass("victory-bg");
-    $("#hyouji").css("color", "").css("text-shadow", "").html("Let's Try");
+    if (movingCount === 0) isAnimating = false;
 }
 
-function hantei(showCelebration) {
-    // 現在の全パネルの数字を取得
-    var n = [];
-    for (var i = 1; i <= 9; i++) {
-        n[i] = $("#p" + i).text();
-    }
-    
-    // 【判定】1〜8が正解位置にあるか（9は空き枠扱い）
-    const isComplete = (n[1] == "1" && n[2] == "2" && n[3] == "3" && 
-                        n[4] == "4" && n[5] == "5" && n[6] == "6" && 
-                        n[7] == "7" && n[8] == "8");
-
-    if (isComplete) {
-        // --- 【A. 正解時の処理】 ---
-        if (showCelebration) {
-            // 音声演出
-            if (isC3Mode) { 
-                playChallengeVoice(selectedSteps); 
-            } else { 
-                playCompleteSound(); 
-            }
-
-            // 視覚演出の追加
-            $(".panel").addClass("complete-glow");
-            $("#content").addClass("victory-bg");
-
-            // タイム計算
-            let clearTime = 0;
-            if (startTime > 0) {
-                clearTime = ((performance.now() - startTime) / 1000).toFixed(2);
-            }
-
-            // チャレンジモード特有のクリーンアップ
-            if (isC3Mode) {
-               
-                
-                // タイム表示とランキング登録
-                if (clearTime > 0) {
-                    $("#hyouji").html(clearTime + "s").css("color", "#2ecc71");
-                    handleRanking(clearTime);
-                }
-            } else {
-                // 通常モードでの完成
-                $("#hyouji").html("COMPLETE!").css("color", "#2ecc71");
-            }
-
-            // 1秒後に状態をリセットして次の操作を待つ
-            setTimeout(() => {
-                startTime = 0;
-                isC3Mode = false;
-                inputBuffer = "";
-                // 演出用クラスは残しても良いが、必要ならここで clearEffects()
-            }, 1000);
-        }
-    } else {
-        // --- 【B. 不正解（MISS）または移動直後の処理】 ---
-        if (isC3Mode && showCelebration && !isAnimating) {
-            // チャレンジモードで指定手数入力した結果、間違っていた場合
-            isAnimating = true; // 復旧演出が終わるまで操作ロック
-            
-            // 1. MISS警告表示
-            $("#hyouji").html("MISS!").css("color", "#ff4757");
-            
-            // 2. 0.8秒待ってから盤面を「その問題の最初」にリセット
-            setTimeout(() => {
-                // 通常の記憶(sn)ではなく、今回の問題(tempSn)をロード
-                for (var i = 1; i <= 9; i++) {
-                    window["n" + i] = tempSn[i];
-                }
-               // 表示を入力待ち状態に戻す
-                $("#hyouji").html("- ".repeat(selectedSteps).trim()).css("color", ""); 
-                inputBuffer = ""; // 入力をやり直し
-                
-                reflectAllExcept(null, true); // 静かに盤面復元
-                isAnimating = false; 
-            }, 800);
-            
-        } else if (!isC3Mode) {
-            // 通常モードで動かしている最中は演出をクリアするだけ
-            clearEffects();
-        }
-    }
+function wmem() {
+    sn1=$("#p1").text(); sn2=$("#p2").text(); sn3=$("#p3").text();
+    sn4=$("#p4").text(); sn5=$("#p5").text(); sn6=$("#p6").text();
+    sn7=$("#p7").text(); sn8=$("#p8").text(); sn9=$("#p9").text();
+    stes = $("#tebo").text(); saveKotae = $("#kotae").text();
+}
+function rmem() {
+    if (challengeTimer) { clearTimeout(challengeTimer); challengeTimer = null; }
+    n1=sn1; n2=sn2; n3=sn3; n4=sn4; n5=sn5; n6=sn6; n7=sn7; n8=sn8; n9=sn9;
+    $("#flinput").html("0"); isC3Mode = false; isAnimating = false; inputBuffer = ""; startTime = 0;
+    $("#tebo").html(stes); $("#kotae").text(saveKotae || "none");
+    $("#hyouji").html("Let's Try").css("color", ""); 
+    for (var i = 1; i <= 9; i++) { $("#p" + i).text(window["n" + i]); }
+    reflectAllExcept(null, true);
+}
+function set0(h) { n1=1; n2=2; n3=3; n4=4; n5=5; n6=6; n7=7; n8=8; n9=9; reflectAllExcept(null, true); }
+function mset() { 
+    var mov = Math.floor(Math.random() * 9) + 1; 
+    var targetNum = $("#p" + mov).text(); 
+    for(var i = 0; i < 7; i++) { window["pm" + mov](true); }
+    return targetNum;
+}
+function prepareMode(message, color) {
+    set0(false); $("#kotae").text("none"); clearEffects();
+    $("#hyouji").html(message).css("color", color || "");
+    inputBuffer = ""; isC3Mode = false;
 }
 
-function startCometLoop(panelId) {
-  if (cometInterval) return;
-  const path = cometPaths[panelId];
-  if (!path) return;
-
-  let step = 0;
-  const stepTime = 250; // 約2秒で1周
-
-  cometInterval = setInterval(() => {
-    // 前の残像を全部消す
-    path.forEach(idx => $("#p" + idx).removeClass("light-1 light-2 light-3 light-4"));
-
-    const len = path.length;
-
-    // 頭
-    $("#p" + path[step % len]).addClass("light-1");
-
-    // 胴体（1ステップ前）
-    if (step >= 1) {
-      $("#p" + path[(step - 1 + len) % len]).addClass("light-2");
-    }
-    // 尾（2ステップ前）
-    if (step >= 2) {
-      $("#p" + path[(step - 2 + len) % len]).addClass("light-3");
-    }
-    // 消え際（3ステップ前）
-    if (step >= 3) {
-      $("#p" + path[(step - 3 + len) % len]).addClass("light-4");
-    }
-
-    step++;
-  }, stepTime);
-}
-
-function stopCometLoop() {
-  if (cometInterval) {
-    clearInterval(cometInterval);
-    cometInterval = null;
-  }
-  // 残像完全消去
-  $(".panel").removeClass("light-1 light-2 light-3 light-4");
-}
 // pm関数群
 function pm1(s) { n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text(); var tmp=n2; n2=n5; n5=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=tmp; reflectAllExcept(null, s); }
 function pm2(s) { n1=$("#p1").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); n9=$("#p9").text(); var tmp=n1; n1=n4; n4=n7; n7=n8; n8=n9; n9=n6; n6=n3; n3=n5; n5=tmp; reflectAllExcept(null, s); }
@@ -513,249 +430,9 @@ function pm7(s) { n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4
 function pm8(s) { n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n9=$("#p9").text(); var tmp=n7; n7=n5; n5=n9; n9=n6; n6=n3; n3=n2; n2=n1; n1=n4; n4=tmp; reflectAllExcept(null, s); }
 function pm9(s) { n1=$("#p1").text(); n2=$("#p2").text(); n3=$("#p3").text(); n4=$("#p4").text(); n5=$("#p5").text(); n6=$("#p6").text(); n7=$("#p7").text(); n8=$("#p8").text(); var tmp=n6; n6=n3; n3=n2; n2=n1; n1=n4; n4=n7; n7=n8; n8=n5; n5=tmp; reflectAllExcept(null, s); }
 
-function wmem() { 
-    sn1=$("#p1").text(); sn2=$("#p2").text(); sn3=$("#p3").text();
-    sn4=$("#p4").text(); sn5=$("#p5").text(); sn6=$("#p6").text();
-    sn7=$("#p7").text(); sn8=$("#p8").text(); sn9=$("#p9").text();
-
-    // 【修正】parseIntを外し、表示されている文字（"?" や "3" など）をそのまま保存
-    stes = $("#tebo").text(); 
-    saveKotae = $("#kotae").text();
-}
-function rmem() {
-    // 【最重要】動いている開始タイマーを即座に破棄
-    if (challengeTimer) {
-        clearTimeout(challengeTimer);
-        challengeTimer = null;
-    }
-
-    // 1. セーブデータのロード
-    n1=sn1; n2=sn2; n3=sn3; n4=sn4; n5=sn5; n6=sn6; n7=sn7; n8=sn8; n9=sn9;
-    
-    // 2. モードの完全解除
-    $("#flinput").html("0");
-    isC3Mode = false;
-    isAnimating = false;
-    inputBuffer = "";
-    startTime = 0; // タイムもリセット
-    
-    // 3. 手数と答えの復旧
-    $("#tebo").html(stes);
-    $("#kotae").text(saveKotae || "none");
-    
-    // 4. 表示の復旧
-    $("#hyouji").html("Let's Try").css("color", ""); 
-    for (var i = 1; i <= 9; i++) { $("#p" + i).text(window["n" + i]); }
-    reflectAllExcept(null, true);
-}
-
-function set0(h) { n1=1; n2=2; n3=3; n4=4; n5=5; n6=6; n7=7; n8=8; n9=9; reflectAllExcept(null, true); }
-
-function mset() { 
-    // 1〜9の「場所」をランダムに決定
-    var mov = Math.floor(Math.random() * 9) + 1; 
-    
-    // その「場所」にあるパネルに今書かれている「数字」を取得
-    var targetNum = $("#p" + mov).text(); 
-    
-    // 回転処理を実行
-    for(var i = 0; i < 7; i++) {
-        window["pm" + mov](true); 
-    }
-    
-    return targetNum; // 「場所」ではなく「数字」を返す
-}
-
-async function setDailyChallenge(steps) {
-    set0(false); 
-
-    try {
-        // GASにシード値だけをリクエスト
-        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error("GAS response not ok");
-        }
-        
-        const data = await response.json();
-        let seed = data.seed;  // GASから返ってきた確実なJSTベースのseed値
-
-        // ここから先は元のロジックをほぼそのまま使用
-        for(let i = 0; i < steps; i++) {
-            seed = (seed * 9301 + 49297) % 233280;
-            let move = Math.floor((seed / 233280) * 9) + 1;
-            for(let j = 0; j < 7; j++) {
-                window["pm" + move](true);
-            }
-        }
-        
-        // 一時変数に保存（元のまま）
-        for(var i = 1; i <= 9; i++) {
-            tempSn[i] = $("#p" + i).text();
-        }
-
-    } catch (e) {
-        console.error("GASシード取得エラー、フォールバックします", e);
-        
-        // フォールバック：元のクライアント側計算（一時的に残す）
-        const d = new Date();
-        let seed = (d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) * (steps * 7);
-
-        for(let i = 0; i < steps; i++) {
-            seed = (seed * 9301 + 49297) % 233280;
-            let move = Math.floor((seed / 233280) * 9) + 1;
-            for(let j = 0; j < 7; j++) {
-                window["pm" + move](true);
-            }
-        }
-        
-        for(var i = 1; i <= 9; i++) {
-            tempSn[i] = $("#p" + i).text();
-        }
-    }
-}
-// ==========================================
-// 5. ランキングシステム（世界ランキング対応版）
-// ==========================================
-
-// --- [E] handleRanking 関数のアップデート ---
-async function handleRanking(clearTime) {
-    // ログ送信：スコア投稿
-    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime) });
-
-    // 反映待ちをしてからランキング表示（今日分）
-    setTimeout(() => {
-        changeRankDay(0);
-    }, 600);
-}
-// --- [B] ログ送信用の共通関数 ---
-async function sendLog(action, mode, extra = {}) {
-    try {
-        await fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: action,
-                mode: mode,
-                userId: userId,
-                ...extra
-            })
-        });
-    } catch (e) { console.error("Log Error:", e); }
-}
-
-// --- [C] 日付切り替えボタンの処理（上書き） ---
-function changeRankDay(offset) {
-    currentDayOffset = offset;
-    // クラスを付け替えるだけ（色は CSS が担当する）
-    $(".tab-btn").removeClass("active");
-    $(`.tab-btn:eq(${offset})`).addClass("active");
-    
-    showGlobalRank(selectedSteps, offset);
-}
-
-// ランキングを新しく開く時の専用関数（program.js のどこかに追加）
-function openGlobalRank() {
-    currentDayOffset = 0; 
-    // changeRankDay で直接付与した背景色スタイルを強制解除
-    $(".tab-btn").removeClass("active").css({"background": "", "color": ""}); 
-    showGlobalRank(selectedSteps, 0); 
-}
-
-// ランキング表示・取得のメイン関数
-async function showGlobalRank(steps, dayOffset = null) {
-    // 1. オフセットの決定
-    if (dayOffset === null) {
-        currentDayOffset = 0; 
-    } else {
-        currentDayOffset = dayOffset;
-    }
-
-    // 2. モーダルの表示準備
-    $("#rank-modal").fadeIn(200);
-    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
-
-    // 3. 全てのタブを一旦リセット（★重要：色指定ではなくクラスのみ操作）
-    $(".tab-btn").removeClass("active");
-
-    // 4. 日付ラベルの更新と、該当タブの点灯
-    for (let i = 0; i < 3; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        
-        const label = (i === 0) ? "TODAY" : `${d.getMonth() + 1}/${d.getDate()}`;
-        const $targetTab = $(`.tab-btn:eq(${i})`);
-        
-        $targetTab.text(label);
-        
-        // 現在表示中の日付タブにだけ active クラスを付与
-        if (i === currentDayOffset) {
-            $targetTab.addClass("active");
-        }
-    }
-
-    // --- ここから先は GAS への通信処理（前回のままでOKです） ---
-    // (以下、GASへのリクエスト処理へ続く...)
-    // 4. GASへデータをリクエスト
-    try {
-        // ログ送信（今日を表示する時だけ「閲覧」ログを記録）
-        if (currentDayOffset === 0) sendLog("viewRank", steps);
-
-        // APIリクエスト（アクション名、モード、オフセットを送信）
-        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${currentDayOffset}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) throw new Error("Network response was not ok");
-        const data = await response.json();
-
-        // 5. データの流し込み
-        let listHtml = "";
-        if (!data.top5 || data.top5.length === 0) {
-            listHtml = `<div style='padding:30px; color:#95a5a6; font-size:14px;'>NO DATA<br><small>(${data.date})</small></div>`;
-            $("#rank-average").html("AVERAGE: --s");
-        } else {
-            // 上位5位のリスト作成
-            data.top5.forEach((s, i) => {
-                listHtml += `
-                    <div class="rank-item" style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px dotted #555;">
-                        <span style="color:#f1c40f; font-family:'Orbitron';">${i + 1}st</span>
-                        <span style="font-family:'Orbitron'; color:#ecf0f1;">${parseFloat(s).toFixed(2)}s</span>
-                    </div>`;
-            });
-            // 平均とプレイ人数の更新
-            $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
-        }
-        
-        $("#rank-list").html(listHtml);
-        $("#modal-title").text(`MODE: ${steps} RANK`);
-
-    } catch (e) {
-        console.error("Rank Fetch Error:", e);
-        $("#rank-list").html("<div style='padding:20px; color:#e74c3c;'>CONNECTION ERROR</div>");
-    }
-}
-function getDailySeed() {
-    const d = new Date();
-    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-}
-
-// モード切替時の共通処理（HOME状態を記憶に定着させる）
-function prepareMode(message, color) {
-    set0(false);
-    $("#kotae").text("none");
-    // wmem(); // ← ここでのセーブは一旦ストップ。問題生成後に任せます。
-    
-    clearEffects();
-    $("#hyouji").html(message).css("color", color || "");
-    inputBuffer = "";
-    isC3Mode = false;
-}
+// モーダル閉じる処理
 $(document).on('click', '.close-modal, #rank-modal', function(e) {
-    if (e.target === this || $(e.target).hasClass('close-modal')) {
-        $("#rank-modal").fadeOut(200);
-    }
+    if (e.target === this || $(e.target).hasClass('close-modal')) { $("#rank-modal").fadeOut(200); }
 });
 
 $(function () { main(); });
