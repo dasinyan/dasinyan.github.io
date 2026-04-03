@@ -133,7 +133,7 @@ function rotatePanels(clickedIdx, clockwise = true) {
 
         // ゴースト生成
         const $ghost = $('<div class="ghost-num"></div>').css({
-            'background-image': `url(IMG/num${numToMove}.png)`,
+            'background-image': `url(img/num${numToMove}.png)`,
             'z-index': 100,
             'top': startCoord.top,
             'left': startCoord.left,
