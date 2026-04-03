@@ -241,6 +241,7 @@ footer {
     pointer-events: none; /* クリックを貫通させる */
     /* 迫力を出すための影 */
     filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
+	z-index: 9999; /* 他のどのパネルよりも上に表示する */
 }
 
 /* --- 既存の .panel を少し調整 --- */
