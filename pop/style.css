@@ -60,6 +60,7 @@ body {
 
 /* --- メインコンテナ --- */
 #content {
+	position: relative;
   /* 白ベースに、少し遊び心のある影 */
   background: #ffffff;
   padding: 25px;
@@ -67,6 +68,9 @@ body {
   box-shadow: 0 15px 0 rgba(0,0,0,0.05), 0 20px 40px rgba(0,0,0,0.1);
   width: 360px; /* 以前のバランスを参考に調整 */
   text-align: center;
+	
+  /* もし可能なら、これを追加するとゴーストが枠外に飛び出さず綺麗です */
+  overflow: hidden; 
 }
 
 /* --- パズルグリッド（バランス維持＋ポップ化） --- */
