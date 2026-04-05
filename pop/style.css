@@ -60,7 +60,7 @@ body {
 
 /* --- メインコンテナ --- */
 #content {
-	position: relative;
+  position: relative;
   /* 白ベースに、少し遊び心のある影 */
   background: #ffffff;
   padding: 25px;
@@ -211,6 +211,19 @@ footer {
   margin-top: 15px;
   border-top: 2px dashed #f0f4f8;
   padding-top: 15px;
+}
+
+/* 無効化状態のスタイル */
+.bot:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+#kotae {
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 .answer-area .label {
