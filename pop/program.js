@@ -186,75 +186,113 @@ function playHomeVoiceByMoves() {
     }
 
     function rotatePanels(clickedIdx, clockwise = true, shouldUnlock = true) {
-        if (isAnimating && shouldUnlock) return;
-        isAnimating = true; 
-        const oldState = [...panelState];
-        const nextState = [...panelState];
-        const routes = {
-            0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
-            2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
-            4: [1, 0, 3, 6, 7, 8, 5, 2], 5: [4, 2, 1, 0, 3, 6, 7, 8],
-            6: [4, 7, 8, 5, 2, 1, 0, 3], 7: [4, 8, 5, 2, 1, 0, 3, 6],
-            8: [4, 5, 2, 1, 0, 3, 6, 7]
+    if (isAnimating && shouldUnlock) return;
+    
+    isAnimating = true; 
+    
+    const oldState = [...panelState];
+    const nextState = [...panelState];
+    
+    const routes = {
+        0: [4, 3, 6, 7, 8, 5, 2, 1], 
+        1: [4, 0, 3, 6, 7, 8, 5, 2],
+        2: [4, 1, 0, 3, 6, 7, 8, 5], 
+        3: [4, 6, 7, 8, 5, 2, 1, 0],
+        4: [1, 0, 3, 6, 7, 8, 5, 2], 
+        5: [4, 2, 1, 0, 3, 6, 7, 8],
+        6: [4, 7, 8, 5, 2, 1, 0, 3], 
+        7: [4, 8, 5, 2, 1, 0, 3, 6],
+        8: [4, 5, 2, 1, 0, 3, 6, 7]
+    };
+    
+    const targets = routes[clickedIdx];
+    
+    // パネル座標を事前に取得（アニメーションで使用）
+    const panelCoords = [];
+    for (let i = 1; i <= 9; i++) {
+        const $p = $(`#p${i}`);
+        panelCoords[i - 1] = { 
+            top: $p.position().top, 
+            left: $p.position().left 
         };
-        const targets = routes[clickedIdx];
-        const panelCoords = [];
-        for (let i = 1; i <= 9; i++) {
-            const $p = $(`#p${i}`);
-            panelCoords[i - 1] = { top: $p.position().top, left: $p.position().left };
-        }
-        for (let i = 0; i < targets.length; i++) {
-            const currentPos = targets[i];
-            const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
-            const sourcePos = targets[sourceIdxInRoute];
-            const movingNum = oldState[sourcePos];
-            nextState[currentPos] = movingNum;
-            posMap[movingNum - 1] = currentPos;
-        }
-        panelState = [...nextState];
-
-        targets.forEach((currentPos, i) => {
-            const targetPosId = `#p${currentPos + 1}`;
-            const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
-            const sourcePos = targets[sourceIdxInRoute];
-            const numToMove = oldState[sourcePos];
-            const startCoord = panelCoords[sourcePos];
-            const endCoord = panelCoords[currentPos];
-            const $ghost = $('<div class="ghost-num"></div>').css({
-                'background-image': `url(img/num${numToMove}.png)`,
-                'z-index': 100, 'top': startCoord.top, 'left': startCoord.left, 'position': 'absolute'
-            });
-            $('#content').append($ghost);
-            $(`#p${sourcePos + 1}`).css('background-image', 'none');
-            const diffX = endCoord.left - startCoord.left;
-            const diffY = endCoord.top - startCoord.top;
-            const curveSize = clockwise ? 60 : -60;
-            gsap.to($ghost, { 
-                duration: 0.6 * ANI_SPEED, delay: i * 0.05 * ANI_SPEED, ease: "back.out(1.2)",
-                onUpdate: function() {
-                    const progress = this.progress();
-                    const sineProg = Math.sin(progress * Math.PI); 
-                    const offset = sineProg * curveSize;
-                    gsap.set($ghost, { 
-                        x: diffX * progress + (diffY !== 0 ? offset : 0),
-                        y: diffY * progress + (diffX !== 0 ? offset : 0),
-                        rotation: (clockwise ? 360 : -360) * progress,
-                        scale: 1 + (sineProg * 0.2), 
-                        filter: `drop-shadow(${sineProg * 10}px ${sineProg * 10}px 10px rgba(0,0,0,0.3))`
-                    });
-                },
-                onComplete: () => {
-                    refreshSinglePanel(currentPos, false); 
-                    $ghost.remove();
-                    if (i === targets.length - 1) {
-                        refreshPanels(); 
-                        if (shouldUnlock) isAnimating = false;
-                        hantei();
-                    }
-                }
-            });
-        });
     }
+
+    // 状態を先に更新
+    for (let i = 0; i < targets.length; i++) {
+        const currentPos = targets[i];
+        const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
+        const sourcePos = targets[sourceIdxInRoute];
+        const movingNum = oldState[sourcePos];
+        nextState[currentPos] = movingNum;
+        posMap[movingNum - 1] = currentPos;
+    }
+    
+    panelState = [...nextState];
+
+    // 実際のアニメーション（ghost使用）
+    targets.forEach((currentPos, i) => {
+        const targetPosId = `#p${currentPos + 1}`;
+        const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
+        const sourcePos = targets[sourceIdxInRoute];
+        const numToMove = oldState[sourcePos];
+        
+        const startCoord = panelCoords[sourcePos];
+        const endCoord = panelCoords[currentPos];
+
+        // ghost作成
+        const $ghost = $('<div class="ghost-num"></div>').css({
+            'background-image': `url(img/num${numToMove}.png)`,
+            'z-index': 9999,
+            'top': startCoord.top + 'px',
+            'left': startCoord.left + 'px',
+            'position': 'absolute'
+        });
+        
+        $('#content').append($ghost);
+
+        // 移動元のパネルを一旦非表示（ここが重複の原因になりやすい）
+        const $sourcePanel = $(`#p${sourcePos + 1}`);
+        $sourcePanel.css('background-image', 'none');
+
+        const diffX = endCoord.left - startCoord.left;
+        const diffY = endCoord.top - startCoord.top;
+        const curveSize = clockwise ? 60 : -60;
+
+        gsap.to($ghost, { 
+            duration: 0.6 * ANI_SPEED, 
+            delay: i * 0.05 * ANI_SPEED, 
+            ease: "back.out(1.2)",
+            
+            onUpdate: function() {
+                const progress = this.progress();
+                const sineProg = Math.sin(progress * Math.PI); 
+                const offset = sineProg * curveSize;
+                
+                gsap.set($ghost, { 
+                    x: diffX * progress + (diffY !== 0 ? offset : 0),
+                    y: diffY * progress + (diffX !== 0 ? offset : 0),
+                    rotation: (clockwise ? 360 : -360) * progress,
+                    scale: 1 + (sineProg * 0.2), 
+                    filter: `drop-shadow(${sineProg * 10}px ${sineProg * 10}px 10px rgba(0,0,0,0.3))`
+                });
+            },
+            
+            onComplete: () => {
+                $ghost.remove();
+                
+                // ここで移動先を正しい画像に更新
+                refreshSinglePanel(currentPos, false); 
+                
+                // 最後のghostが終わったときだけ全体を同期
+                if (i === targets.length - 1) {
+                    refreshPanels(); 
+                    if (shouldUnlock) isAnimating = false;
+                    hantei();
+                }
+            }
+        });
+    });
+}
 
    async function executeCombo() {
     // 1. バリデーション
