@@ -1,5 +1,3 @@
-/* style.css */
-
 /* --- 全体のリセットとフォント --- */
 * {
   box-sizing: border-box;
@@ -7,73 +5,46 @@
   padding: 0;
 }
 
-/* メッセージボード：一番上の表示部分 */
-.message-board {
-  margin-bottom: 20px;
-  perspective: 500px; /* わずかに立体感を出すため */
-}
-
-#hyouji {
-  background-color: #ffeb3b; /* 鮮やかなイエロー */
-  color: #c62828;            /* 濃い赤で視認性確保 */
-  font-family: 'Fredoka One', cursive;
-  font-size: 28px;
-  padding: 15px;
-  border-radius: 20px;
-  border: 4px solid #333;
-  box-shadow: 0 8px 0 #fbc02d, 0 10px 20px rgba(0,0,0,0.1);
-  
-  /* 少し傾けて「コミカル」なニュアンスを出す */
-  transform: rotate(-2deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 70px;
-  
-  /* アニメーションの準備 */
-  transition: all 0.2s ease;
-}
-
-/* 状況によって色や動きを変えるためのクラス（JSで制御） */
-.status-thinking { color: #1976d2; transform: rotate(1deg); }
-.status-win { 
-  background-color: #ff4081; 
-  color: white; 
-  animation: bounce 0.5s infinite alternate; 
-}
-
-@keyframes bounce {
-  from { transform: scale(1) rotate(-2deg); }
-  to { transform: scale(1.05) rotate(2deg); }
-}
-
 body {
-  /* 背景は少し落ち着いた、おもちゃ箱のようなパステルグレー */
   background-color: #f0f4f8; 
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  /* メインは丸みのあるポップなフォント */
   font-family: 'Fredoka One', cursive; 
 }
 
 /* --- メインコンテナ --- */
 #content {
   position: relative;
-  /* 白ベースに、少し遊び心のある影 */
   background: #ffffff;
   padding: 25px;
-  border-radius: 30px; /* 角丸を強く */
+  border-radius: 30px;
   box-shadow: 0 15px 0 rgba(0,0,0,0.05), 0 20px 40px rgba(0,0,0,0.1);
-  width: 360px; /* 以前のバランスを参考に調整 */
+  width: 360px;
   text-align: center;
-	
-  /* もし可能なら、これを追加するとゴーストが枠外に飛び出さず綺麗です */
   overflow: hidden; 
 }
 
-/* --- パズルグリッド（バランス維持＋ポップ化） --- */
+/* --- メッセージボード --- */
+.message-board { margin-bottom: 20px; perspective: 500px; }
+#hyouji {
+  background-color: #ffeb3b;
+  color: #c62828;
+  font-family: 'Fredoka One', cursive;
+  font-size: 28px;
+  padding: 15px;
+  border-radius: 20px;
+  border: 4px solid #333;
+  box-shadow: 0 8px 0 #fbc02d;
+  transform: rotate(-2deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70px;
+}
+
+/* --- パズルグリッド --- */
 .puzzle-grid {
   display: grid;
   grid-template-columns: repeat(3, 100px);
@@ -81,192 +52,202 @@ body {
   gap: 10px;
   justify-content: center;
   margin-bottom: 25px;
-/* ...既存の設定... */
-  grid-template-areas: 
-    "p1 p2 p3"
-    "p4 p5 p6"
-    "p7 p8 p9";
 }
-#p1 { grid-area: p1; } #p2 { grid-area: p2; } #p3 { grid-area: p3; }
-#p4 { grid-area: p4; } #p5 { grid-area: p5; } #p6 { grid-area: p6; }
-#p7 { grid-area: p7; } #p8 { grid-area: p8; } #p9 { grid-area: p9; }
 
-/* --- パネルの装飾：枠は維持、中は薄く --- */
 .panel {
   width: 100px;
   height: 100px;
   border-radius: 18px;
-  border: 4px solid #3d4143; /* 枠線はしっかり */
-  background-color: rgba(255, 255, 255, 0.9); /* 中は薄く（画像が透けるベース） */
-  box-shadow: 0 4px 0 rgba(0,0,0,0.1); /* 軽い影 */
+  border: 4px solid #3d4143;
+  background-color: rgba(255, 255, 255, 0.9);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
   cursor: pointer;
-  position: relative; /* アニメーション用 */
-}
-.panel:active {
-  transform: translateY(3px);
-  box-shadow: 0 3px 0 #00acc1;
+  position: relative;
+  transition: background-color 0.4s, border-color 0.4s, transform 0.1s;
 }
 
+.panel:active { transform: translateY(3px); }
 
-/* HOME（正解位置）に収まった時のクラス */
-.at-home {
-  /* JSで各パネル固有の色を background-color に流し込みます */
-  border-color: rgba(0, 0, 0, 0.1); /* 枠を少し馴染ませる */
-  transition: background-color 0.4s ease, border-color 0.4s ease;
-}
+/* --- コントロールグリッド --- */
 .controls-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 60px); /* 全ての行を60pxで固定 */
+  grid-template-rows: repeat(3, 60px);
   gap: 10px;
   margin-bottom: 20px;
 }
-/* 共通ボタンスタイル：ぷっくり沈む */
-.bot, .bot-special {
+
+/* ボタン共通設定（ぷっくりスタイル） */
+.bot, .bot-special, .moves-counter {
   border: none;
   border-radius: 15px;
   font-family: 'Fredoka One', cursive;
   font-size: 16px;
   color: #ffffff;
-  height: 100%; 
-  padding: 0;
   cursor: pointer;
-  transition: all 0.1s;
-  text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-transform: uppercase;
+  transition: all 0.1s;
 }
 
-.bot:active {
+.bot:active, .bot-special:active, .moves-counter:active {
   transform: translateY(3px);
 }
 
-/* --- 個別カラー設定（Pop Edition） --- */
-
-/* 1. 設定・トグル系：スカイブルーに統一 (旧SOUND色) */
+/* --- 個別カラー設定 --- */
+/* 1. 設定系（青） */
 .input-mode, .sys-sound {
   background-color: #4fc3f7;
   box-shadow: 0 5px 0 #0288d1;
 }
-.input-mode:active, .sys-sound:active { box-shadow: 0 2px 0 #0288d1; }
-/* 2. 手数ボタン：赤ベースに白文字（他のボタンと挙動を統一） */
+
+/* 2. 手数（赤） */
 .moves-counter {
-  background-color: #ef5350; /* 鮮やかな赤 */
-  box-shadow: 0 5px 0 #c62828; /* 濃い赤の影 */
-  color: #ffffff;            /* 文字は白で見やすく */
-  
-  /* ボタンとしての共通設定 */
-  border: none;
-  border-radius: 15px;
+  background-color: #ef5350;
+  box-shadow: 0 5px 0 #c62828;
   font-family: 'Roboto Mono', monospace;
   font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s;
 }
 
-/* 押し込んだ時の動きを他のボタンと同期 */
-.moves-counter:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #c62828;
-}
-/* 3. 実行系（セット・リセット）：イエローゴールド (旧RANK色) */
+/* 3. 実行系（黄） */
 .sys-set, .sys-reset {
   background-color: #ffd54f;
   box-shadow: 0 5px 0 #fbc02d;
-  color: #333; /* 視認性のため文字は暗く */
+  color: #333;
 }
-.sys-set:active, .sys-reset:active { box-shadow: 0 2px 0 #fbc02d; }
-/* SOUND: スカイブルー */
-.sys-sound {
-  background-color: #4fc3f7;
-  box-shadow: 0 5px 0 #0288d1;
-}
-.sys-sound:active { box-shadow: 0 2px 0 #0288d1; }
 
-/* 4. 特殊機能（PEEK）：ライムグリーン (旧MODE色) */
-.peek-btn {
-  background-color: #8bc34a;
-  box-shadow: 0 5px 0 #689f38;
-}
-.peek-btn:active { box-shadow: 0 2px 0 #689f38; }
 
-/* 5. 下段三つ：ブルーグレーに統一 (旧MODE SELECT色) */
+/* 5. 下段（グレー） ※ここがご希望の場所です */
 .mode-select, .start-btn, .rank-btn {
   background-color: #90a4ae;
   box-shadow: 0 5px 0 #546e7a;
-  color: #ffffff;
-  font-size: 16px; /* STARTも他と合わせる */
-}
-.mode-select:active, .start-btn:active, .rank-btn:active { 
-  box-shadow: 0 2px 0 #546e7a; 
 }
 
-/* --- フッター（解答例） --- */
-footer {
+/* --- 4. 特殊（緑：PEEK & KOTAE） --- */
+/* クラスとID両方に同じ色を適用します */
+.peek-btn, #kotae {
+  background-color: #8bc34a !important; /* 明るい緑 */
+  box-shadow: 0 5px 0 #689f38 !important; /* 濃い緑の影 */
+  color: #ffffff !important;
+  
+  /* 初期状態（SET前）の設定 */
+  opacity: 0.5;
+  cursor: not-allowed;
+  
+  /* KOTAE専用のサイズ調整もここに統合 */
+  min-height: 45px;
+  font-size: 14px;
+  width: 100%; /* footer内で横いっぱいに広げる場合 */
+  transition: all 0.2s;
+}
+
+/* footer内の余白調整だけ残す */
+.answer-area {
   margin-top: 15px;
-  border-top: 2px dashed #f0f4f8;
-  padding-top: 15px;
+  text-align: center;
 }
 
-/* 無効化状態のスタイル */
-.bot:disabled {
-    cursor: not-allowed;
-    filter: grayscale(0.8);
-    transform: none !important;
-    box-shadow: none !important;
+/* 無効化 */
+.bot:disabled { filter: grayscale(0.8); cursor: not-allowed; box-shadow: none; }
+
+/* --- モーダル（最前面・中央固定） --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
 }
 
-#kotae {
-    cursor: pointer;
-    transition: background-color 0.3s;
+.modal-content {
+  background: #fff;
+  padding: 25px;
+  border: 5px solid #333;
+  border-radius: 25px;
+  width: 85%;
+  max-width: 350px;
+  text-align: center;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.2);
+  color: #333;
+  animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.answer-area .label {
-  font-size: 12px;
-  color: #90a4ae;
-  margin-bottom: 5px;
-  display: block;
+@keyframes modalPop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-/* ANSWER：黒板のようなダークグリーン */
-#kotae {
-  background-color: #263238;
-  color: #81c784; /* 黄緑色の文字 */
+#rank-list {
+  margin: 15px 0;
+  background: #f0f0f0;
+  border-radius: 15px;
+  padding: 15px;
+  min-height: 180px;
   font-family: 'Roboto Mono', monospace;
-  font-size: 18px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 2px solid #37474f;
-  min-height: 40px;
+  font-size: 1.1rem;
+  text-align: left;
 }
 
-/* --- style.css の最後に追加 --- */
-
-/* アニメーション専用の使い捨て数字レイヤー */
+/* アニメーション用数字 */
 .ghost-num {
-    width: 100px;  /* パネルと同じサイズ */
-    height: 100px;
-    background-size: contain; /* キャラ全体を表示 */
-    background-repeat: no-repeat;
-    background-position: center;
-    position: absolute; /* 親コンテナ(#content)に対して絶対配置 */
-    pointer-events: none; /* クリックを貫通させる */
-    /* 迫力を出すための影 */
-    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
-	z-index: 9999; /* 他のどのパネルよりも上に表示する */
+  width: 100px; height: 100px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
+  z-index: 9999;
 }
 
-/* --- 既存の .panel を少し調整 --- */
-.panel {
-    /* ...既存の設定... */
-    background-color: rgba(255, 255, 255, 0.9); /* デフォルトの中の色 */
-    background-size: contain; /* background-imageのサイズを調整 */
-    background-repeat: no-repeat;
-    background-position: center;
-    transition: background-color 0.4s ease, border-color 0.4s ease, transform 0.1s ease; /* transitionを追加 */
+/* --- 5. ランキングモーダル用タブボタンの強化 --- */
+.tab-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 5px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  font-family: 'Fredoka One', cursive;
+  border-radius: 10px !important;
+  border: 2px solid #bdc3c7 !important;
+  background: #fdfdfd !important;
+  color: #7f8c8d !important;
+  box-shadow: 0 4px 0 #bdc3c7 !important;
+  transition: all 0.1s ease;
+  cursor: pointer;
+  opacity: 1 !important; /* 透明度を100%にして見やすく */
+}
+
+/* ホバー（PC操作時） */
+.tab-btn:hover {
+  background: #f1f2f6 !important;
+}
+
+/* アクティブ（現在選択中の日） */
+.tab-btn.active {
+  background: #3498db !important; /* POPなブルー */
+  color: #ffffff !important;
+  border-color: #2980b9 !important;
+  box-shadow: 0 2px 0 #21618c !important;
+  transform: translateY(2px); /* 押し込んだ見た目 */
+}
+
+/* ランキング項目のフォント調整 */
+.rank-item {
+  font-size: 15px;
+  font-weight: bold;
 }

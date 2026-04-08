@@ -1,8 +1,23 @@
 $(function() {
+
     // --- 1. 状態管理 ---
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxYSRnkE_7AM4Q1MeSvOmP4PlyaOG2wc16Zhxu0R6wEjOAak37fHZv0Njr7n64qK4_3/exec";
+
+    let userId = localStorage.getItem("cyclogic_user_id") || (() => {
+        const id = "U-" + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem("cyclogic_user_id", id);
+        return id;
+    })();
+
+    let startTime = 0;
+    let isChallengeMode = false;
     let panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9]; 
     let posMap = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     let savedState = [1, 2, 3, 4, 5, 6, 7, 8, 9]; 
+    let savedIsComboMode = false;
+    let savedSelectedSteps = 0;
+    let savedModeMoves = 0;
+    
     let isSoundOn = true;
     let isAnimating = false;
     let currentAnswer = []; 
@@ -11,7 +26,10 @@ $(function() {
     let modeMoves = 0;       
     let isComboMode = false; 
     let inputBuffer = [];    
-    let selectedSteps = 0;   
+    let selectedSteps = 0; 
+
+  
+let currentDayOffset = 0; // 状態管理用
 
     const ANI_SPEED = 1.0;
 
@@ -35,7 +53,7 @@ $(function() {
         sehome3: new Audio('sound/sehome3.mp3'),
         sehome4: new Audio('sound/sehome4.mp3'),
         sehome5: new Audio('sound/sehome5.mp3'),
-	complete: new Audio('sound/complete.mp3')
+        complete: new Audio('sound/complete.mp3')
     };
 
     // --- 2. 共通関数 ---
@@ -51,49 +69,118 @@ $(function() {
 
     function playStartVoice() {
         const r = Math.floor(Math.random() * 6) + 1;
-        let voiceKey;
-        if (r <= 3) voiceKey = 'sestart1';
-        else if (r <= 5) voiceKey = 'sestart2';
-        else voiceKey = 'sestart3';
+        let voiceKey = (r <= 3) ? 'sestart1' : (r <= 5 ? 'sestart2' : 'sestart3');
         playSnd(voiceKey, true);
     }
 
     function playIncompleteVoice() {
         const r = Math.floor(Math.random() * 6) + 1;
-        let voiceKey;
-        if (r <= 3) voiceKey = 'seinco1';
-        else if (r <= 5) voiceKey = 'seinco2';
-        else voiceKey = 'seinco3';
+        let voiceKey = (r <= 3) ? 'seinco1' : (r <= 5 ? 'seinco2' : 'seinco3');
         playSnd(voiceKey, true);
     }
 
-	/**
- * 手数(modeMoves)に応じた正解ボイスを 3:2:1 の比率で再生
- */
-function playHomeVoiceByMoves() {
-    const r = Math.floor(Math.random() * 6) + 1; // 1〜6の乱数
-    let voiceKey;
-
-    if (modeMoves <= 2) {
-        // 手数 1〜2 (または0): sehome 1(50%), 2(33%), 3(17%)
-        if (r <= 3) voiceKey = 'sehome1';
-        else if (r <= 5) voiceKey = 'sehome2';
-        else voiceKey = 'sehome3';
-    } 
-    else if (modeMoves <= 4) {
-        // 手数 3〜4: sehome 2(50%), 3(33%), 4(17%)
-        if (r <= 3) voiceKey = 'sehome2';
-        else if (r <= 5) voiceKey = 'sehome3';
-        else voiceKey = 'sehome4';
-    } 
-    else {
-        // 手数 5〜6: sehome 3(50%), 4(33%), 5(17%)
-        if (r <= 3) voiceKey = 'sehome3';
-        else if (r <= 5) voiceKey = 'sehome4';
-        else voiceKey = 'sehome5';
+    function playHomeVoiceByMoves() {
+        const r = Math.floor(Math.random() * 6) + 1;
+        let voiceKey;
+        if (modeMoves <= 2) {
+            voiceKey = (r <= 3) ? 'sehome1' : (r <= 5 ? 'sehome2' : 'sehome3');
+        } else if (modeMoves <= 4) {
+            voiceKey = (r <= 3) ? 'sehome2' : (r <= 5 ? 'sehome3' : 'sehome4');
+        } else {
+            voiceKey = (r <= 3) ? 'sehome3' : (r <= 5 ? 'sehome4' : 'sehome5');
+        }
+        playSnd(voiceKey, true);
     }
 
-    playSnd(voiceKey, true);
+    // チャレンジ開始プロセスの定義
+async function startChallengeProcess() {
+    if (isAnimating) return;
+
+    // --- 【修正ポイント】強制的にCOMBOモードに切り替える ---
+    isComboMode = true;
+    $("#input-mode").text("COMBO").addClass("mode-active");
+    
+    // 現在のMODE(3 or 4)を確定させ、手数を同期
+    if (selectedSteps === 0) selectedSteps = 3; 
+    modeMoves = selectedSteps;
+    $("#tebo").text(modeMoves);
+
+    isChallengeMode = true;
+    playSnd('click');
+    
+    $("#hyouji").text("CONNECTING...").css("color", "#3498db");
+    
+    // デイリー問題をセット（中身を混ぜる）
+    await setDailyChallenge(selectedSteps);
+    
+    // 確実にバッファを空にする
+    inputBuffer = [];
+    
+    $("#hyouji").text("READY?").css("color", "#f1c40f");
+    
+    setTimeout(() => {
+        // コンボ入力待ちの表示（例："- - -"）にする
+        $("#hyouji").text("- ".repeat(selectedSteps).trim()).css("color", "");
+        startTime = performance.now();
+    }, 1200);
+}
+
+    async function setDailyChallenge(steps) {
+    // set0(false); // POP版にはないので削除
+    isAnimating = true; // 通信中も操作できないようにロック
+    try {
+        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}&dayOffset=0&userId=${userId}&appType=POP`;
+        const response = await fetch(url);
+        const data = await response.json();
+        let seed = data.seed; 
+        
+        // 盤面を初期状態（HOME）に戻してから混ぜる
+        panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        
+        // シード値に基づいてスタンダード版と同じ手順でシャッフル
+        for(let i = 0; i < steps; i++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            let moveIdx = Math.floor((seed / 233280) * 9); // 0〜8のインデックス
+            // スタンダード版の挙動（逆回転7回）を再現
+            logicRotate(moveIdx, false); 
+        }
+
+        // シャッフル後の状態を保存（リセット用）
+        savedState = [...panelState];
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+        refreshPanels();
+        
+    } catch (e) { 
+        console.error("Seed Fetch Error:", e);
+        $("#hyouji").text("NETWORK ERROR");
+    } finally {
+        isAnimating = false;
+    }
+}
+
+    async function handleRanking(clearTime) {
+    // extra引数に appType: "POP" を含めて送信
+    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime), appType: "POP" });
+    // 投稿完了後にランキング画面を表示（少し待機してから）
+    setTimeout(() => { openGlobalRank(); }, 600);
+}
+
+    async function sendLog(action, mode, extra = {}) {
+    try {
+        await fetch(GAS_URL, {
+            method: "POST", 
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            // ここで appType を extra から取り出して「直下」に置く
+            body: JSON.stringify({ 
+                action, 
+                mode, 
+                userId, 
+                appType: extra.appType || "POP", // 直下に配置
+                ...extra 
+            })
+        });
+    } catch (e) { console.error("Log Error:", e); }
 }
 
     function getPaleColor(hex) {
@@ -104,9 +191,7 @@ function playHomeVoiceByMoves() {
     }
 
     function refreshPanels() {
-        panelState.forEach((num, index) => {
-            refreshSinglePanel(index, false);
-        });
+        panelState.forEach((num, index) => { refreshSinglePanel(index, false); });
     }
 
     function refreshSinglePanel(index, animate = true) {
@@ -126,47 +211,27 @@ function playHomeVoiceByMoves() {
             $(targetId).removeClass("at-home").css({ "background-color": getPaleColor(posColor), "border-color": "#3d4143" });
         }
         if (animate) {
-            gsap.fromTo(targetId, 
-                { scaleX: 1.3, scaleY: 0.7 },
-                { scaleX: 1, scaleY: 1, duration: 0.6, ease: "elastic.out(1, 0.3)", clearProps: "transform" }
-            );
+            gsap.fromTo(targetId, { scaleX: 1.3, scaleY: 0.7 }, { scaleX: 1, scaleY: 1, duration: 0.6, ease: "elastic.out(1, 0.3)", clearProps: "transform" });
         }
     }
 
     function updateUIState(active) {
         const buttons = $("#peek-btn, #resebo, #kotae");
-        if (active) {
-            buttons.prop("disabled", false).css({ "opacity": "1.0", "cursor": "pointer" });
-            $("#kotae").text("Forbidden fruit");
-        } else {
-            buttons.prop("disabled", true).css({ "opacity": "0.5", "cursor": "not-allowed" });
-            $("#kotae").text("Forbidden fruit");
-        }
+        buttons.prop("disabled", !active).css({ "opacity": active ? "1.0" : "0.5", "cursor": active ? "pointer" : "not-allowed" });
     }
 
     function hantei() {
-    const isHome = panelState.every((num, idx) => num === idx + 1);
-    
-    if (isHome) {
-        // SINGLEモードの時だけ「HOME」と「complete音」
-        if (!isComboMode) {
+        const isHome = panelState.every((num, idx) => num === idx + 1);
+        if (isHome && !isComboMode) {
             $("#hyouji").text("✨ HOME ✨");
             playSnd('complete', true);
-        }
-    } else {
-        // SINGLEモードで、まだ解けていない時だけ
-        if (!isComboMode) {
+        } else if (!isComboMode) {
             $("#hyouji").text("Let's Try");
         }
-        // COMBOモードの時は、executeCombo側でセットした「- - -」を維持するため何もしない
     }
-}
-
-    // --- 3. ロジック ---
 
     function logicRotate(clickedIdx, clockwise = false) {
         const oldState = [...panelState];
-        const nextState = [...panelState];
         const routes = {
             0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
             2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
@@ -177,236 +242,269 @@ function playHomeVoiceByMoves() {
         const targets = routes[clickedIdx];
         for (let i = 0; i < targets.length; i++) {
             const currentPos = targets[i];
-            const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
-            const sourcePos = targets[sourceIdxInRoute];
-            nextState[currentPos] = oldState[sourcePos];
+            const sourcePos = targets[clockwise ? (i + 1) % 8 : (i + 7) % 8];
+            panelState[currentPos] = oldState[sourcePos];
         }
-        panelState = [...nextState];
         panelState.forEach((num, idx) => { posMap[num - 1] = idx; });
     }
 
-    function rotatePanels(clickedIdx, clockwise = true, shouldUnlock = true) {
-    if (isAnimating && shouldUnlock) return;
-    
-    isAnimating = true; 
-    
-    const oldState = [...panelState];
-    const nextState = [...panelState];
-    
-    const routes = {
-        0: [4, 3, 6, 7, 8, 5, 2, 1], 
-        1: [4, 0, 3, 6, 7, 8, 5, 2],
-        2: [4, 1, 0, 3, 6, 7, 8, 5], 
-        3: [4, 6, 7, 8, 5, 2, 1, 0],
-        4: [1, 0, 3, 6, 7, 8, 5, 2], 
-        5: [4, 2, 1, 0, 3, 6, 7, 8],
-        6: [4, 7, 8, 5, 2, 1, 0, 3], 
-        7: [4, 8, 5, 2, 1, 0, 3, 6],
-        8: [4, 5, 2, 1, 0, 3, 6, 7]
-    };
-    
-    const targets = routes[clickedIdx];
-    
-    // パネル座標を事前に取得（アニメーションで使用）
-    const panelCoords = [];
-    for (let i = 1; i <= 9; i++) {
-        const $p = $(`#p${i}`);
-        panelCoords[i - 1] = { 
-            top: $p.position().top, 
-            left: $p.position().left 
+   function rotatePanels(clickedIdx, clockwise = true, shouldUnlock = true) {
+    return new Promise((resolve) => {
+        if (isAnimating && shouldUnlock) return resolve();
+        isAnimating = true;
+
+        // --- 1. アニメーション開始前の状態を保存 ---
+        const oldState = [...panelState];
+        const panelCoords = Array.from({length: 9}, (_, i) => $(`#p${i+1}`).position());
+
+        // --- 2. 内部データは「ここだけで」1回更新する ---
+        logicRotate(clickedIdx, clockwise);
+
+        const routes = {
+            0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
+            2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
+            4: [1, 0, 3, 6, 7, 8, 5, 2], 5: [4, 2, 1, 0, 3, 6, 7, 8],
+            6: [4, 7, 8, 5, 2, 1, 0, 3], 7: [4, 8, 5, 2, 1, 0, 3, 6],
+            8: [4, 5, 2, 1, 0, 3, 6, 7]
         };
-    }
+        const targets = routes[clickedIdx];
+        let completedCount = 0;
 
-    // 状態を先に更新
-    for (let i = 0; i < targets.length; i++) {
-        const currentPos = targets[i];
-        const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
-        const sourcePos = targets[sourceIdxInRoute];
-        const movingNum = oldState[sourcePos];
-        nextState[currentPos] = movingNum;
-        posMap[movingNum - 1] = currentPos;
-    }
-    
-    panelState = [...nextState];
+        targets.forEach((currentPos, i) => {
+            const sourcePos = targets[clockwise ? (i + 1) % 8 : (i + 7) % 8];
+            const numToMove = oldState[sourcePos]; // 更新前のデータを使用
+            const startCoord = panelCoords[sourcePos];
+            const endCoord = panelCoords[currentPos];
 
-    // 実際のアニメーション（ghost使用）
-    targets.forEach((currentPos, i) => {
-        const targetPosId = `#p${currentPos + 1}`;
-        const sourceIdxInRoute = clockwise ? (i + 1) % 8 : (i + 7) % 8;
-        const sourcePos = targets[sourceIdxInRoute];
-        const numToMove = oldState[sourcePos];
-        
-        const startCoord = panelCoords[sourcePos];
-        const endCoord = panelCoords[currentPos];
+            const $ghost = $('<div class="ghost-num"></div>').css({
+                'background-image': `url(img/num${numToMove}.png)`,
+                'top': startCoord.top, 'left': startCoord.left, 'position': 'absolute', 'z-index': 9999
+            });
+            $('#content').append($ghost);
+            $(`#p${sourcePos + 1}`).css('background-image', 'none');
 
-        // ghost作成
-        const $ghost = $('<div class="ghost-num"></div>').css({
-            'background-image': `url(img/num${numToMove}.png)`,
-            'z-index': 9999,
-            'top': startCoord.top + 'px',
-            'left': startCoord.left + 'px',
-            'position': 'absolute'
-        });
-        
-        $('#content').append($ghost);
-
-        // 移動元のパネルを一旦非表示（ここが重複の原因になりやすい）
-        const $sourcePanel = $(`#p${sourcePos + 1}`);
-        $sourcePanel.css('background-image', 'none');
-
-        const diffX = endCoord.left - startCoord.left;
-        const diffY = endCoord.top - startCoord.top;
-        const curveSize = clockwise ? 60 : -60;
-
-        gsap.to($ghost, { 
-            duration: 0.6 * ANI_SPEED, 
-            delay: i * 0.05 * ANI_SPEED, 
-            ease: "back.out(1.2)",
-            
-            onUpdate: function() {
-                const progress = this.progress();
-                const sineProg = Math.sin(progress * Math.PI); 
-                const offset = sineProg * curveSize;
-                
-                gsap.set($ghost, { 
-                    x: diffX * progress + (diffY !== 0 ? offset : 0),
-                    y: diffY * progress + (diffX !== 0 ? offset : 0),
-                    rotation: (clockwise ? 360 : -360) * progress,
-                    scale: 1 + (sineProg * 0.2), 
-                    filter: `drop-shadow(${sineProg * 10}px ${sineProg * 10}px 10px rgba(0,0,0,0.3))`
-                });
-            },
-            
-            onComplete: () => {
-                $ghost.remove();
-                
-                // ここで移動先を正しい画像に更新
-                refreshSinglePanel(currentPos, false); 
-                
-                // 最後のghostが終わったときだけ全体を同期
-                if (i === targets.length - 1) {
-                    refreshPanels(); 
-                    if (shouldUnlock) isAnimating = false;
-                    hantei();
+            gsap.to($ghost, {
+                duration: 0.6 * ANI_SPEED, delay: i * 0.05 * ANI_SPEED, ease: "back.out(1.2)",
+                onUpdate: function() {
+                    const p = this.progress();
+                    const off = Math.sin(p * Math.PI) * (clockwise ? 60 : -60);
+                    gsap.set($ghost, { 
+                        x: (endCoord.left - startCoord.left) * p + (endCoord.top !== startCoord.top ? off : 0), 
+                        y: (endCoord.top - startCoord.top) * p + (endCoord.left !== startCoord.left ? off : 0), 
+                        rotation: (clockwise ? 360 : -360) * p 
+                    });
+                },
+                onComplete: () => {
+                    $ghost.remove();
+                    refreshSinglePanel(currentPos, false);
+                    completedCount++;
+                    
+                    if (completedCount === targets.length) {
+                        refreshPanels(); // 最後に全体を整える
+                        if (shouldUnlock) isAnimating = false;
+                        hantei();
+                        resolve(); // アニメーション完了を通知
+                    }
                 }
-            }
+            });
         });
     });
 }
 
-   async function executeCombo() {
-    // 1. バリデーション
+    async function executeCombo() {
+    // 1. 入力チェック
     if (inputBuffer.length !== selectedSteps || selectedSteps === 0) {
-        isAnimating = false;
-        $("#hyouji").text("Input Error");
+        isAnimating = false; 
+        $("#hyouji").text("Input Error"); 
         return;
     }
 
-    // 2. 実行準備
-    isAnimating = true; 
-    const targetNumbers = [...inputBuffer];
-    inputBuffer = []; // バッファを先に空にしておく
-    
-    // 開始ボイス
-    playStartVoice();
-    
-    // ボイスを聞かせるための「溜め」
-    await new Promise(resolve => setTimeout(resolve, 800));
+    isAnimating = true; // 処理開始。ロックをかけるasync function executeCombo() {
+    // 1. 入力チェック
+    if (inputBuffer.length !== selectedSteps || selectedSteps === 0) {
+        isAnimating = false; 
+        $("#hyouji").text("Input Error"); 
+        return;
+    }
 
-    // 3. パネル回転ループ
+    isAnimating = true; // 処理開始。ロックをかける
+    const targetNumbers = [...inputBuffer];
+    inputBuffer = []; // バッファをクリア
+    
+    // チャレンジ中ならボイスは開始時に鳴っているので、ここではSEのみ
+    if (!isChallengeMode) playStartVoice(); 
+    await new Promise(r => setTimeout(r, 600)); // 開始前のタメ
+
+    // 2. 連続回転処理
     for (let num of targetNumbers) {
         const currentIdx = posMap[num - 1];
-        if (currentIdx !== undefined && currentIdx >= 0 && currentIdx < 9) {
+        if (currentIdx !== undefined) {
             playSnd('push', true);
-            isAnimating = false; 
-            rotatePanels(currentIdx, true, false); // shouldUnlockをfalseにして連鎖
-            await new Promise(resolve => setTimeout(resolve, 950 * ANI_SPEED));
-            isAnimating = true; // ループ中は入力をガード
+            await rotatePanels(currentIdx, true, false); 
+            await new Promise(r => setTimeout(r, 150 * ANI_SPEED)); 
         }
     }
 
-    // 4. 結果判定セクション
-    const isHome = panelState.every((num, idx) => num === idx + 1);
+    // 3. 全てのアニメーション完了後の判定
+    const isHome = panelState.every((n, i) => n === i + 1);
 
     if (isHome) {
-        // 【正解：PERFECT】
-        $("#hyouji").text("✨ HOME ✨");
-        playHomeVoiceByMoves(); // 手数に応じた比率で称賛
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // 正解後リセット演出
-        $("#hyouji").text("RESET..."); 
-        resetToInitial(); 
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // 入力待ち表示へ復帰
-        if (isComboMode && selectedSteps > 0) {
-            $("#hyouji").text("- ".repeat(selectedSteps).trim());
+        // --- 【正解時】盤面・タイムを表示したまま停止 ---
+        if (isChallengeMode && startTime > 0) {
+            const clearTime = ((performance.now() - startTime) / 1000).toFixed(2);
+            $("#hyouji").html(clearTime + "s").css("color", "#2ecc71");
+            handleRanking(clearTime); // ランキング送信
+            isChallengeMode = false;  // クリアしたのでフラグを折る
+            startTime = 0;
+        } else {
+            $("#hyouji").text("✨ HOME ✨").css("color", "#2ecc71");
         }
-
+        
+        playHomeVoiceByMoves();
+        // 自動リセット(resetToInitial)は呼ばない
+        
     } else {
-        // 【不正解：INCOMPLETE】
-        $("#hyouji").text("INCOMPLETE");
-        playIncompleteVoice(); // ディスりボイス
-
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // 不正解後リセット演出
-        $("#hyouji").text("RETRY...");
-        resetToInitial(); 
+        // --- 【不正解時】ボイスを流して、自動的に問題の最初に戻す ---
+        $("#hyouji").text("INCOMPLETE").css("color", "#ff4757");
+        playIncompleteVoice();
         
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(r => setTimeout(r, 1500));
         
-        // 入力待ち表示へ復帰
-        if (isComboMode && selectedSteps > 0) {
-            $("#hyouji").text("- ".repeat(selectedSteps).trim());
-        }
+        // 盤面をリトライ用に「その問題の開始時」へ戻す
+        resetToInitial();
+        
+        // タイム計測(startTime)はリセットせず、入力待ち表示に戻す
+        $("#hyouji").text("- ".repeat(selectedSteps).trim()).css("color", "");
     }
 
-    // 5. 終了処理
-    isAnimating = false; 
-    
-    // COMBOモード時は表示を維持したいので、SINGLEの時だけhanteiに任せる
-    if (!isComboMode) {
-        hantei(); 
-    }
+    // 4. 状態の復元
+    isAnimating = false; // 全ての処理が終わったのでロック解除
 }
 
-/**
- * 盤面を問題開始時の状態 (savedState) に戻す共通関数
- */
-function resetToInitial() {
-    panelState = [...savedState];
-    panelState.forEach((num, idx) => {
-        posMap[num - 1] = idx;
-    });
-    refreshPanels();
+    function resetToInitial() {
+        panelState = [...savedState];
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+        refreshPanels();
+    }
+
+   function openGlobalRank() {
+
+	if (selectedSteps === 0) {
+        selectedSteps = 3;
+    }
+    if ($("#rank-modal").length === 0) {
+        $("body").append(`
+            <div id="rank-modal" class="modal-overlay" style="display:none;">
+                <div class="modal-content">
+                    <div class="tab-container" style="display:flex; justify-content:space-around; margin-bottom:15px;">
+                        <button class="tab-btn bot" onclick="changeRankDay(0)" style="font-size:10px; flex:1; margin:2px;">TODAY</button>
+                        <button class="tab-btn bot" onclick="changeRankDay(1)" style="font-size:10px; flex:1; margin:2px;">-1</button>
+                        <button class="tab-btn bot" onclick="changeRankDay(2)" style="font-size:10px; flex:1; margin:2px;">-2</button>
+                    </div>
+                    
+                    <h2 id="modal-title" style="font-family:'Fredoka One'; font-size:18px; color:#333;">RANKING</h2>
+                    
+                    <div id="rank-list" style="margin:10px 0;"></div>
+                    
+                    <div id="rank-average" style="font-size:12px; color:#666; margin-bottom:10px; font-family:'Roboto Mono';"></div>
+                    
+                    <button class="bot rank-btn" onclick="$('#rank-modal').fadeOut(200)" style="width:100%; background:#90a4ae;">CLOSE</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    // 初期化：今日のランキングを表示
+    changeRankDay(0);
+}
+
+
+function changeRankDay(offset) {
+    currentDayOffset = offset;
+    
+    // 全てのタブからactiveを消し、今回押したのだけに付与
+    $(".tab-btn").removeClass("active");
+    $(`.tab-btn:eq(${offset})`).addClass("active");
+    
+    showGlobalRank(selectedSteps, offset);
+}
+async function showGlobalRank(steps, dayOffset = 0) {
+    $("#rank-modal").fadeIn(200);
+    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
+
+    // 日付ラベルの更新（スタンダード版のロジック）
+    for (let i = 0; i < 3; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const label = (i === 0) ? "TODAY" : `${d.getMonth() + 1}/${d.getDate()}`;
+        $(`.tab-btn:eq(${i})`).text(label);
+    }
+
+    try {
+        // 重要：appType=POP を付与してスタンダード版と差別化
+        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${dayOffset}&userId=${userId}&appType=POP`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        let listHtml = "";
+        
+        if (!data.top5 || data.top5.length === 0) {
+            listHtml = `<div style='padding:30px; color:#95a5a6; text-align:center;'>NO DATA<br><small>(${data.date})</small></div>`;
+            $("#rank-average").html("AVERAGE: --s");
+        } else {
+            // 上位リストの構築
+            data.top5.forEach((s, i) => {
+                const colors = ["#f1c40f", "#bdc3c7", "#e67e22"]; // 金銀銅
+                const rankColor = colors[i] || "#333";
+                listHtml += `
+                <div class="rank-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px dotted #ccc; font-family:'Roboto Mono';">
+                    <span style="color:${rankColor}; font-weight:bold;">${i + 1}st</span>
+                    <span style="color:#333;">${parseFloat(s).toFixed(2)}s</span>
+                </div>`;
+            });
+            
+            // スタンダード版継承：平均タイムとプレイ回数
+            $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
+        }
+        
+        $("#rank-list").html(listHtml);
+        $("#modal-title").text(`MODE ${steps} RANK`);
+        
+    } catch (e) { 
+        $("#rank-list").html("<div style='padding:20px; color:#e74c3c;'>CONNECTION ERROR</div>"); 
+    }
 }
 
     // --- 4. イベント登録 ---
 
+    $('.bot').click(function() {
+        if (isAnimating) return;
+        playSnd('click');
+        const id = $(this).attr("id");
+        if (id === "mode-select") {
+            selectedSteps = (selectedSteps === 3) ? 4 : 3;
+            $(this).text("MODE " + selectedSteps);
+            if (isComboMode) $("#hyouji").text("- ".repeat(selectedSteps).trim());
+        } else if (id === "challenge-start") {
+            startChallengeProcess();
+        } else if (id === "rank") {
+            openGlobalRank();
+        }
+    });
+
     $('.panel').on('click', function() {
         if (isAnimating) return;
-        const panelIndex = $(".panel").index(this);
-        const clickedNum = panelState[panelIndex];
+        const idx = $(".panel").index(this);
         if (isComboMode && selectedSteps > 0) {
             playSnd('click');
             if (inputBuffer.length < selectedSteps) {
-                inputBuffer.push(clickedNum);
-                let displayStr = inputBuffer.join(" ");
-                for (let i = inputBuffer.length; i < selectedSteps; i++) {
-                    displayStr += " -";
-                }
-                $("#hyouji").text(displayStr.trim());
-            }
-            if (inputBuffer.length === selectedSteps) {
-                setTimeout(() => { executeCombo(); }, 180);
+                inputBuffer.push(panelState[idx]);
+                let disp = inputBuffer.join(" ") + " -".repeat(selectedSteps - inputBuffer.length);
+                $("#hyouji").text(disp.trim());
+                if (inputBuffer.length === selectedSteps) setTimeout(executeCombo, 180);
             }
         } else {
             playSnd('push');
-            rotatePanels(panelIndex);
+            rotatePanels(idx);
         }
     });
 
@@ -414,14 +512,8 @@ function resetToInitial() {
         if (isAnimating) return;
         playSnd('click');
         isComboMode = !isComboMode;
-        if (isComboMode) {
-            $(this).text("COMBO").addClass("mode-active");
-            selectedSteps = modeMoves;
-            $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!");
-        } else {
-            $(this).text("SINGLE").removeClass("mode-active");
-            $("#hyouji").text("Let's Try");
-        }
+        $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
+        $("#hyouji").text(isComboMode ? (selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!") : "Let's Try");
         inputBuffer = [];
     });
 
@@ -440,38 +532,40 @@ function resetToInitial() {
     $("#sebo").on("click", function() {
         if (isAnimating) return;
         playSnd('click');
-        inputBuffer = [];
-        selectedSteps = modeMoves;
-        currentAnswer = [];
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        posMap = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-        if (modeMoves === 0) {
-            $("#hyouji").text("HOME");
-            updateUIState(false);
-        } else {
-            let shuffleHistory = [];
-            for(let i = 0; i < modeMoves; i++) {
-                const randomIdx = Math.floor(Math.random() * 9);
-                shuffleHistory.push(panelState[randomIdx]);
-                logicRotate(randomIdx, false);
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+        if (modeMoves > 0) {
+            let hist = [];
+            for (let i = 0; i < modeMoves; i++) {
+                const r = Math.floor(Math.random() * 9);
+                hist.push(panelState[r]);
+                logicRotate(r, false);
             }
-            currentAnswer = shuffleHistory.reverse();
+            currentAnswer = hist.reverse();
             updateUIState(true);
             $("#hyouji").text(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try");
+        } else {
+            $("#hyouji").text("HOME");
+            updateUIState(false);
         }
         savedState = [...panelState];
+        savedIsComboMode = isComboMode;
+        savedSelectedSteps = selectedSteps;
+        savedModeMoves = modeMoves;
         refreshPanels();
-        gsap.fromTo(".panel", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, stagger: 0.02, ease: "back.out", overwrite: true });
     });
 
     $("#resebo").on("click", function() {
-        if (isAnimating || savedState.length === 0) return;
+        if (isAnimating) return;
         playSnd('click');
-        panelState = [...savedState];
-        panelState.forEach((num, idx) => { posMap[num - 1] = idx; });
+        resetToInitial();
+        isComboMode = savedIsComboMode;
+        selectedSteps = savedSelectedSteps;
+        modeMoves = savedModeMoves;
+        $("#tebo").text(modeMoves);
+        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
+        $("#hyouji").text(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try");
         inputBuffer = [];
-        if (isComboMode) $("#hyouji").text("- ".repeat(selectedSteps).trim());
-        refreshPanels();
     });
 
     $(".sys-sound").on("click", function() {
@@ -493,8 +587,6 @@ function resetToInitial() {
         setTimeout(() => { $(this).text("Forbidden fruit"); }, 3000);
     });
 
-    // 初期化実行
-    $("#tebo").text(modeMoves);
+    // 初期化
     refreshPanels();
-
-}); // ← ここで全ての $(function() { ... }) を閉じる
+});

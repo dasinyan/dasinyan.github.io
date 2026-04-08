@@ -34,11 +34,12 @@
 
   <nav class="controls-grid">
     <button type="button" class="bot input-mode" id="input-mode">SINGLE</button>
-    <div class="bot-special moves-counter" id="tebo">000</div>
+    <div class="bot-special moves-counter" id="tebo">0</div>
     <button type="button" class="bot sys-set" id="sebo">SET</button>
 
     <button type="button" class="bot sys-sound" id="sound-toggle">SOUND</button>
-    <button type="button" class="bot peek-btn" id="peek-btn">PEEK</button> <button type="button" class="bot sys-reset" id="resebo">RESET</button>
+    <button type="button" class="bot peek-btn" id="peek-btn">PEEK</button> 
+	<button type="button" class="bot sys-reset" id="resebo">RESET</button>
 
     <button type="button" class="bot mode-select" id="mode-select">MODE 3</button>
     <button type="button" class="bot start-btn" id="challenge-start">START</button>
@@ -46,11 +47,13 @@
   </nav>
 
   <footer>
-    <div class="answer-area">
-      <span class="label">ANSWER EXAMPLE:</span>
-      <div id="kotae" class="bot">Forbidden fruit</div>
-    </div>
-  </footer>
+  <div class="answer-area" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 15px; border: 2px dashed #ccc;">
+    <div class="label" style="font-size: 12px; color: #666; margin-bottom: 5px;">ANSWER EXAMPLE</div>
+    <button type="button" id="kotae" class="bot" style="width: 100%; background-color: #ffb74d; box-shadow: 0 5px 0 #f57c00; color: #fff;">
+      FORBIDDEN FRUIT
+    </button>
+  </div>
+</footer>
 
 </div>
 
