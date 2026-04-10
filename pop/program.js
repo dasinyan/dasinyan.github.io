@@ -1,7 +1,7 @@
 $(function() {
 
     // --- 1. 状態管理 ---
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxYSRnkE_7AM4Q1MeSvOmP4PlyaOG2wc16Zhxu0R6wEjOAak37fHZv0Njr7n64qK4_3/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzfITxWEanzZSxhHnTsv9DUrkhHnJ91Tj8gDGYSaWY4ZrqgYRYhJHirQT7_MKIAUCzf/exec";
 
     let userId = localStorage.getItem("cyclogic_user_id") || (() => {
         const id = "U-" + Math.random().toString(36).substring(2, 10);
@@ -158,25 +158,31 @@ async function startChallengeProcess() {
     }
 }
 
-    async function handleRanking(clearTime) {
-    // extra引数に appType: "POP" を含めて送信
+    // handleRanking を以下に差し替え
+async function handleRanking(clearTime) {
+    // 1. スコアを送信
     await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime), appType: "POP" });
-    // 投稿完了後にランキング画面を表示（少し待機してから）
-    setTimeout(() => { openGlobalRank(); }, 600);
+    
+    // 2. モーダルを開く（未作成なら作成し、TODAYを表示する）
+    openGlobalRank(); 
+    
+    // 3. 送信完了を見計らって、今日のランキングを再ロードして最新化
+    setTimeout(() => { 
+        showGlobalRank(selectedSteps, 0); 
+    }, 800);
 }
-
     async function sendLog(action, mode, extra = {}) {
     try {
+        // スコア送信。POSTで appType を直下に配置
         await fetch(GAS_URL, {
-            method: "POST", 
-            mode: "no-cors", 
+            method: "POST",
+            mode: "no-cors", // GASへのPOSTはこれが必要な場合が多いです
             headers: { "Content-Type": "application/json" },
-            // ここで appType を extra から取り出して「直下」に置く
             body: JSON.stringify({ 
                 action, 
                 mode, 
                 userId, 
-                appType: extra.appType || "POP", // 直下に配置
+                appType: extra.appType || "POP",
                 ...extra 
             })
         });
@@ -388,10 +394,11 @@ async function startChallengeProcess() {
     }
 
    function openGlobalRank() {
-
-	if (selectedSteps === 0) {
+    if (selectedSteps === 0) {
         selectedSteps = 3;
     }
+
+    // モーダルがまだ無ければ作成（一度だけ実行される）
     if ($("#rank-modal").length === 0) {
         $("body").append(`
             <div id="rank-modal" class="modal-overlay" style="display:none;">
@@ -401,79 +408,87 @@ async function startChallengeProcess() {
                         <button class="tab-btn bot" onclick="changeRankDay(1)" style="font-size:10px; flex:1; margin:2px;">-1</button>
                         <button class="tab-btn bot" onclick="changeRankDay(2)" style="font-size:10px; flex:1; margin:2px;">-2</button>
                     </div>
-                    
                     <h2 id="modal-title" style="font-family:'Fredoka One'; font-size:18px; color:#333;">RANKING</h2>
-                    
                     <div id="rank-list" style="margin:10px 0;"></div>
-                    
                     <div id="rank-average" style="font-size:12px; color:#666; margin-bottom:10px; font-family:'Roboto Mono';"></div>
-                    
                     <button class="bot rank-btn" onclick="$('#rank-modal').fadeOut(200)" style="width:100%; background:#90a4ae;">CLOSE</button>
                 </div>
             </div>
         `);
     }
+
+    // モーダルを表示
+    $("#rank-modal").fadeIn(200);
     
-    // 初期化：今日のランキングを表示
+    // 今日のランキングを表示（タブの選択状態も更新）
     changeRankDay(0);
 }
 
 
-function changeRankDay(offset) {
+window.changeRankDay = function(offset) {
     currentDayOffset = offset;
     
     // 全てのタブからactiveを消し、今回押したのだけに付与
     $(".tab-btn").removeClass("active");
     $(`.tab-btn:eq(${offset})`).addClass("active");
     
+    // ランキング表示関数を呼び出す
     showGlobalRank(selectedSteps, offset);
-}
-async function showGlobalRank(steps, dayOffset = 0) {
+};async function showGlobalRank(steps, dayOffset = 0) {
     $("#rank-modal").fadeIn(200);
-    $("#rank-list").html("<div style='padding:20px; color:#3498db;'>CONNECTING...</div>");
+    $("#rank-list").html("<div style='padding:20px; color:#3498db; font-family:\"Roboto Mono\";'>CONNECTING...</div>");
 
-    // 日付ラベルの更新（スタンダード版のロジック）
+    // 1. 日付ラベル（タブ）の更新
     for (let i = 0; i < 3; i++) {
-        const d = new Date(); d.setDate(d.getDate() - i);
+        const d = new Date();
+        d.setDate(d.getDate() - i);
         const label = (i === 0) ? "TODAY" : `${d.getMonth() + 1}/${d.getDate()}`;
         $(`.tab-btn:eq(${i})`).text(label);
     }
 
     try {
-        // 重要：appType=POP を付与してスタンダード版と差別化
+        // 2. GASへのリクエスト構築
+        // mode, dayOffset に加え、appType=POP を明示的に付与
         const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${dayOffset}&userId=${userId}&appType=POP`;
+        
         const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         
         let listHtml = "";
         
+        // 3. データの判定とリスト構築
         if (!data.top5 || data.top5.length === 0) {
-            listHtml = `<div style='padding:30px; color:#95a5a6; text-align:center;'>NO DATA<br><small>(${data.date})</small></div>`;
-            $("#rank-average").html("AVERAGE: --s");
+            // データがない場合の表示
+            listHtml = `<div style='padding:30px; color:#95a5a6; text-align:center; font-family:\"Roboto Mono\";'>NO DATA<br><small>(${data.date || '----'})</small></div>`;
+            $("#rank-average").html("AVG: --s / PLAYS: 0");
         } else {
-            // 上位リストの構築
-            data.top5.forEach((s, i) => {
-                const colors = ["#f1c40f", "#bdc3c7", "#e67e22"]; // 金銀銅
+            // 上位5名のリスト構築
+            data.top5.forEach((score, i) => {
+                const colors = ["#f1c40f", "#bdc3c7", "#e67e22"]; // 金・銀・銅
                 const rankColor = colors[i] || "#333";
+                const rankText = (i === 0) ? "1st" : (i === 1) ? "2nd" : (i === 2) ? "3rd" : `${i + 1}th`;
+                
                 listHtml += `
-                <div class="rank-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px dotted #ccc; font-family:'Roboto Mono';">
-                    <span style="color:${rankColor}; font-weight:bold;">${i + 1}st</span>
-                    <span style="color:#333;">${parseFloat(s).toFixed(2)}s</span>
+                <div class="rank-item" style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px dotted #ccc; font-family:'Roboto Mono';">
+                    <span style="color:${rankColor}; font-weight:bold;">${rankText}</span>
+                    <span style="color:#333; font-weight:500;">${parseFloat(score).toFixed(2)}s</span>
                 </div>`;
             });
             
-            // スタンダード版継承：平均タイムとプレイ回数
+            // 平均タイムとプレイ回数の表示
             $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
         }
         
-        $("#rank-list").html(listHtml);
+        // 4. UIへの反映
+        $("#rank-list").hide().html(listHtml).fadeIn(300);
         $("#modal-title").text(`MODE ${steps} RANK`);
         
-    } catch (e) { 
-        $("#rank-list").html("<div style='padding:20px; color:#e74c3c;'>CONNECTION ERROR</div>"); 
+    } catch (e) {
+        console.error("Ranking Fetch Error:", e);
+        $("#rank-list").html("<div style='padding:20px; color:#e74c3c; font-family:\"Roboto Mono\";'>CONNECTION ERROR</div>"); 
     }
 }
-
     // --- 4. イベント登録 ---
 
     $('.bot').click(function() {
