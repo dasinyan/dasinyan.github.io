@@ -28,6 +28,8 @@ $(function() {
     let inputBuffer = [];    
     let selectedSteps = 0; 
 
+let dailyTargetSteps = 3; // デイリー用のデフォルト（3 or 4）
+
   
 let currentDayOffset = 0; // 状態管理用
 
@@ -96,35 +98,33 @@ let currentDayOffset = 0; // 状態管理用
 async function startChallengeProcess() {
     if (isAnimating) return;
 
-    // --- 【修正ポイント】強制的にCOMBOモードに切り替える ---
-    isComboMode = true;
-    $("#input-mode").text("COMBO").addClass("mode-active");
-    
-    // 現在のMODE(3 or 4)を確定させ、手数を同期
-    if (selectedSteps === 0) selectedSteps = 3; 
-    modeMoves = selectedSteps;
-    $("#tebo").text(modeMoves);
-
+    // --- 1. デイリー用のルールを強制適用 ---
+    isComboMode = true; // デイリーは必ずコンボ
     isChallengeMode = true;
+    
+    // 選ばれている階級（3 or 4）を実行用の手数に同期
+    selectedSteps = dailyTargetSteps; 
+    modeMoves = selectedSteps;
+
+    // UIの表示を同期
+    $("#input-mode").text("DAILY").addClass("mode-active"); 
+    $("#tebo").text(modeMoves);
+    
     playSnd('click');
-    
     $("#hyouji").text("CONNECTING...").css("color", "#3498db");
-    
-    // デイリー問題をセット（中身を混ぜる）
+
+    // --- 2. 問題の取得とセット ---
+    // ここで selectedSteps (3 or 4) を渡す
     await setDailyChallenge(selectedSteps);
     
-    // 確実にバッファを空にする
     inputBuffer = [];
-    
     $("#hyouji").text("READY?").css("color", "#f1c40f");
     
     setTimeout(() => {
-        // コンボ入力待ちの表示（例："- - -"）にする
         $("#hyouji").text("- ".repeat(selectedSteps).trim()).css("color", "");
         startTime = performance.now();
     }, 1200);
 }
-
     async function setDailyChallenge(steps) {
     // set0(false); // POP版にはないので削除
     isAnimating = true; // 通信中も操作できないようにロック
@@ -393,12 +393,13 @@ async function handleRanking(clearTime) {
         refreshPanels();
     }
 
-   function openGlobalRank() {
-    if (selectedSteps === 0) {
-        selectedSteps = 3;
-    }
+// --- ランキング関連関数 ---
 
-    // モーダルがまだ無ければ作成（一度だけ実行される）
+function openGlobalRank() {
+    // 1. 表示すべき手数を決定（チャレンジ中ならその手数を、そうでなければ選択中のデイリー階級を使用）
+    const targetSteps = (isChallengeMode && selectedSteps > 0) ? selectedSteps : dailyTargetSteps;
+
+    // 2. モーダルがまだ無ければ作成
     if ($("#rank-modal").length === 0) {
         $("body").append(`
             <div id="rank-modal" class="modal-overlay" style="display:none;">
@@ -409,7 +410,7 @@ async function handleRanking(clearTime) {
                         <button class="tab-btn bot" onclick="changeRankDay(2)" style="font-size:10px; flex:1; margin:2px;">-2</button>
                     </div>
                     <h2 id="modal-title" style="font-family:'Fredoka One'; font-size:18px; color:#333;">RANKING</h2>
-                    <div id="rank-list" style="margin:10px 0;"></div>
+                    <div id="rank-list" style="margin:10px 0; min-height:100px;"></div>
                     <div id="rank-average" style="font-size:12px; color:#666; margin-bottom:10px; font-family:'Roboto Mono';"></div>
                     <button class="bot rank-btn" onclick="$('#rank-modal').fadeOut(200)" style="width:100%; background:#90a4ae;">CLOSE</button>
                 </div>
@@ -417,28 +418,36 @@ async function handleRanking(clearTime) {
         `);
     }
 
-    // モーダルを表示
+    // 3. モーダルを表示
     $("#rank-modal").fadeIn(200);
     
-    // 今日のランキングを表示（タブの選択状態も更新）
-    changeRankDay(0);
+    // 4. 今日のランキングを表示
+    changeRankDay(0, targetSteps);
 }
 
-
-window.changeRankDay = function(offset) {
+// タブクリック時などに呼び出される関数（windowスコープ）
+window.changeRankDay = function(offset, forcedSteps = null) {
     currentDayOffset = offset;
     
-    // 全てのタブからactiveを消し、今回押したのだけに付与
+    // 表示手数の決定ロジック
+    let steps = forcedSteps;
+    if (!steps) {
+        steps = (isChallengeMode && selectedSteps > 0) ? selectedSteps : dailyTargetSteps;
+    }
+    
+    // タブの視覚的切り替え
     $(".tab-btn").removeClass("active");
     $(`.tab-btn:eq(${offset})`).addClass("active");
     
-    // ランキング表示関数を呼び出す
-    showGlobalRank(selectedSteps, offset);
-};async function showGlobalRank(steps, dayOffset = 0) {
-    $("#rank-modal").fadeIn(200);
-    $("#rank-list").html("<div style='padding:20px; color:#3498db; font-family:\"Roboto Mono\";'>CONNECTING...</div>");
+    // データ取得と描画の実行
+    showGlobalRank(steps, offset);
+};
 
-    // 1. 日付ラベル（タブ）の更新
+async function showGlobalRank(steps, dayOffset = 0) {
+    // 通信開始の表示
+    $("#rank-list").html("<div style='padding:20px; color:#3498db; font-family:\"Roboto Mono\"; text-align:center;'>CONNECTING...</div>");
+
+    // 1. タブのラベル（日付）を動的に更新
     for (let i = 0; i < 3; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -447,8 +456,7 @@ window.changeRankDay = function(offset) {
     }
 
     try {
-        // 2. GASへのリクエスト構築
-        // mode, dayOffset に加え、appType=POP を明示的に付与
+        // 2. GASへのリクエスト構築（appType=POPを付与）
         const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${dayOffset}&userId=${userId}&appType=POP`;
         
         const response = await fetch(url);
@@ -459,11 +467,9 @@ window.changeRankDay = function(offset) {
         
         // 3. データの判定とリスト構築
         if (!data.top5 || data.top5.length === 0) {
-            // データがない場合の表示
             listHtml = `<div style='padding:30px; color:#95a5a6; text-align:center; font-family:\"Roboto Mono\";'>NO DATA<br><small>(${data.date || '----'})</small></div>`;
             $("#rank-average").html("AVG: --s / PLAYS: 0");
         } else {
-            // 上位5名のリスト構築
             data.top5.forEach((score, i) => {
                 const colors = ["#f1c40f", "#bdc3c7", "#e67e22"]; // 金・銀・銅
                 const rankColor = colors[i] || "#333";
@@ -476,35 +482,47 @@ window.changeRankDay = function(offset) {
                 </div>`;
             });
             
-            // 平均タイムとプレイ回数の表示
             $("#rank-average").html(`AVG: <span style="color:#2ecc71;">${data.average}s</span> / PLAYS: <span style="color:#3498db;">${data.totalPlays}</span>`);
         }
         
-        // 4. UIへの反映
+        // 4. UI反映
         $("#rank-list").hide().html(listHtml).fadeIn(300);
         $("#modal-title").text(`MODE ${steps} RANK`);
         
     } catch (e) {
         console.error("Ranking Fetch Error:", e);
-        $("#rank-list").html("<div style='padding:20px; color:#e74c3c; font-family:\"Roboto Mono\";'>CONNECTION ERROR</div>"); 
+        $("#rank-list").html("<div style='padding:20px; color:#e74c3c; font-family:\"Roboto Mono\"; text-align:center;'>CONNECTION ERROR</div>"); 
     }
-}
+} 
+
     // --- 4. イベント登録 ---
 
-    $('.bot').click(function() {
-        if (isAnimating) return;
-        playSnd('click');
-        const id = $(this).attr("id");
-        if (id === "mode-select") {
-            selectedSteps = (selectedSteps === 3) ? 4 : 3;
-            $(this).text("MODE " + selectedSteps);
-            if (isComboMode) $("#hyouji").text("- ".repeat(selectedSteps).trim());
-        } else if (id === "challenge-start") {
-            startChallengeProcess();
-        } else if (id === "rank") {
-            openGlobalRank();
-        }
-    });
+$('.bot').click(function() {
+    if (isAnimating) return;
+    playSnd('click');
+    const id = $(this).attr("id");
+
+    // 【修正】デイリーのモード（階級）選択
+    if (id === "mode-select") {
+        // dailyTargetSteps という変数を新設して管理する場合
+        dailyTargetSteps = (dailyTargetSteps === 3) ? 4 : 3; 
+        $(this).text("MODE " + dailyTargetSteps);
+
+        // 探偵の助言通り、混乱を防ぐため盤面をHOMEへ
+        panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+        currentAnswer = [];
+        updateUIState(false);
+        $("#hyouji").text("READY?"); // あるいは "HOME"
+        refreshPanels();
+    } 
+    // ...以下、challenge-start や rank の処理...
+    else if (id === "challenge-start") {
+        startChallengeProcess();
+    } else if (id === "rank") {
+        openGlobalRank();
+    }
+});
 
     $('.panel').on('click', function() {
         if (isAnimating) return;
@@ -524,64 +542,137 @@ window.changeRankDay = function(offset) {
     });
 
     $("#input-mode").on("click", function() {
-        if (isAnimating) return;
-        playSnd('click');
-        isComboMode = !isComboMode;
-        $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
-        $("#hyouji").text(isComboMode ? (selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!") : "Let's Try");
-        inputBuffer = [];
-    });
+    if (isAnimating) return;
+    playSnd('click');
+
+    // モーダル切替
+    isComboMode = !isComboMode;
+    $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
+
+    // --- 【追加】盤面をHOMEに強制リセット ---
+    panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    panelState.forEach((n, i) => posMap[n - 1] = i);
+    currentAnswer = []; // 正解データも破棄
+    updateUIState(false); // PEEK/RESEBOなどのボタンを無効化
+    inputBuffer = [];
+
+    // 表示の更新
+    if (isComboMode) {
+        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!");
+    } else {
+        $("#hyouji").text("HOME");
+    }
+    
+    refreshPanels();
+});
 
     $("#tebo").on("click", function() {
-        if (isAnimating) return;
-        playSnd('click');
-        modeMoves = (modeMoves + 1) % 7;
-        $(this).text(modeMoves);
-        if (isComboMode) {
-            selectedSteps = modeMoves;
-            $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME");
-            inputBuffer = [];
-        }
-    });
+    if (isAnimating) return;
+    playSnd('click');
 
-    $("#sebo").on("click", function() {
-        if (isAnimating) return;
-        playSnd('click');
-        panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        panelState.forEach((n, i) => posMap[n - 1] = i);
-        if (modeMoves > 0) {
-            let hist = [];
-            for (let i = 0; i < modeMoves; i++) {
-                const r = Math.floor(Math.random() * 9);
-                hist.push(panelState[r]);
-                logicRotate(r, false);
-            }
-            currentAnswer = hist.reverse();
-            updateUIState(true);
-            $("#hyouji").text(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try");
-        } else {
-            $("#hyouji").text("HOME");
-            updateUIState(false);
+    modeMoves = (modeMoves + 1) % 7;
+    $(this).text(modeMoves);
+    selectedSteps = modeMoves; 
+
+    // --- 【追加】手数を変えたら盤面をHOMEに戻す ---
+    panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    panelState.forEach((n, i) => posMap[n - 1] = i);
+    currentAnswer = [];
+    updateUIState(false);
+    inputBuffer = [];
+
+    if (isComboMode) {
+        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME");
+    } else {
+        $("#hyouji").text("HOME");
+    }
+
+    refreshPanels();
+});
+
+   $("#sebo").on("click", function() {
+    if (isAnimating) return;
+    playSnd('click');
+
+    // --- 1. ルールの確定 ---
+    // その時の「手数ボタン」の値を「コンボ手数」として同期
+    selectedSteps = modeMoves; 
+    inputBuffer = []; // 前回の入力の残骸を掃除
+
+    // --- 2. 盤面リセット ---
+    panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    panelState.forEach((n, i) => posMap[n - 1] = i);
+
+    // --- 3. 問題生成（0手でなければシャッフル） ---
+    if (modeMoves > 0) {
+        let hist = [];
+        for (let i = 0; i < modeMoves; i++) {
+            const r = Math.floor(Math.random() * 9);
+            hist.push(panelState[r]);
+            logicRotate(r, false); // 逆回転で混ぜる
         }
-        savedState = [...panelState];
-        savedIsComboMode = isComboMode;
-        savedSelectedSteps = selectedSteps;
-        savedModeMoves = modeMoves;
-        refreshPanels();
-    });
+        currentAnswer = hist.reverse(); // 正解手順を作成
+        updateUIState(true);
+
+        // --- 4. 表示の出し分け（ここが重要！） ---
+        if (isComboMode) {
+            // COMBOモードなら「- - -」を表示。
+            // selectedStepsが確定しているので、確実に正しい数のハイフンが出る
+            $("#hyouji").text("- ".repeat(selectedSteps).trim());
+        } else {
+            // SINGLEなら一律これ
+            $("#hyouji").text("Let's Try");
+        }
+    } else {
+        // 0手（HOME）の場合
+        $("#hyouji").text("HOME");
+        updateUIState(false);
+        currentAnswer = [];
+    }
+
+    // --- 5. バックアップ ---
+    // 【重要】リセット用の証拠品をすべて保存
+    savedState = [...panelState];      // 盤面の並び
+    savedAnswer = [...currentAnswer];  // 正解の手順（KOTAE）
+    savedSelectedSteps = selectedSteps; // その時の手数
+    savedIsComboMode = isComboMode;    // その時のモード
+
+    refreshPanels();
+});
 
     $("#resebo").on("click", function() {
-        if (isAnimating) return;
-        playSnd('click');
-        resetToInitial();
-        isComboMode = savedIsComboMode;
+    if (isAnimating) return;
+    
+    // デイリー中はガード（現状維持）
+    if (isChallengeMode) return;
+
+    playSnd('click');
+
+    if (savedState && savedState.length > 0) {
+        // --- すべてを保存時の状態へ差し替え ---
+        panelState = [...savedState];
+        currentAnswer = [...savedAnswer]; // KOTAEも復活
         selectedSteps = savedSelectedSteps;
-        modeMoves = savedModeMoves;
-        $("#tebo").text(modeMoves);
-        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
-        $("#hyouji").text(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try");
-        inputBuffer = [];
-    });
+        isComboMode = savedIsComboMode;
+
+        // 盤面のインデックスを再計算
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+        
+        inputBuffer = []; // 打ち込み中の残骸を掃除
+
+        // --- UI表示の同期 ---
+        if (isComboMode) {
+            $("#hyouji").text("- ".repeat(selectedSteps).trim()).css("color", "");
+            $("#input-mode").text("COMBO").addClass("mode-active");
+        } else {
+            $("#hyouji").text("Let's Try").css("color", "");
+            $("#input-mode").text("SINGLE").removeClass("mode-active");
+        }
+        $("#tebo").text(selectedSteps); // 手数表示も戻す
+        
+        refreshPanels();
+    }
+});
 
     $(".sys-sound").on("click", function() {
         isSoundOn = !isSoundOn;
