@@ -229,10 +229,10 @@ async function handleRanking(clearTime) {
     function hantei() {
         const isHome = panelState.every((num, idx) => num === idx + 1);
         if (isHome && !isComboMode) {
-            $("#hyouji").text("✨ HOME ✨");
+            $("#hyouji").text("✨ HOME ✨").css("color", "");
             playSnd('complete', true);
         } else if (!isComboMode) {
-            $("#hyouji").text("Let's Try");
+            $("#hyouji").text("Let's Try").css("color", "");
         }
     }
 
@@ -513,7 +513,7 @@ $('.bot').click(function() {
         panelState.forEach((n, i) => posMap[n - 1] = i);
         currentAnswer = [];
         updateUIState(false);
-        $("#hyouji").text("READY?"); // あるいは "HOME"
+        $("#hyouji").text("READY?").css("color", ""); // あるいは "HOME"
         refreshPanels();
     } 
     // ...以下、challenge-start や rank の処理...
@@ -558,9 +558,9 @@ $('.bot').click(function() {
 
     // 表示の更新
     if (isComboMode) {
-        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!");
+        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!").css("color", "");
     } else {
-        $("#hyouji").text("HOME");
+        $("#hyouji").text("HOME").css("color", "");
     }
     
     refreshPanels();
@@ -582,9 +582,9 @@ $('.bot').click(function() {
     inputBuffer = [];
 
     if (isComboMode) {
-        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME");
+        $("#hyouji").text(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME").css("color", "");
     } else {
-        $("#hyouji").text("HOME");
+        $("#hyouji").text("HOME").css("color", "");
     }
 
     refreshPanels();
@@ -618,14 +618,14 @@ $('.bot').click(function() {
         if (isComboMode) {
             // COMBOモードなら「- - -」を表示。
             // selectedStepsが確定しているので、確実に正しい数のハイフンが出る
-            $("#hyouji").text("- ".repeat(selectedSteps).trim());
+            $("#hyouji").text("- ".repeat(selectedSteps).trim()).css("color", "");
         } else {
             // SINGLEなら一律これ
-            $("#hyouji").text("Let's Try");
+            $("#hyouji").text("Let's Try").css("color", "");
         }
     } else {
         // 0手（HOME）の場合
-        $("#hyouji").text("HOME");
+        $("#hyouji").text("HOME").css("color", "");
         updateUIState(false);
         currentAnswer = [];
     }
