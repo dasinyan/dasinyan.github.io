@@ -29,6 +29,8 @@ $(function() {
     let selectedSteps = 0; 
     let dailyTargetSteps = 3; 
     let currentDayOffset = 0; 
+	let isLocked = false; // クリア後の演出用ロック
+	let winAnims = []; // 祝福アニメーションを保持する配列
 
     const ANI_SPEED = 1.0;
 
@@ -69,7 +71,108 @@ $(function() {
         $("#hyouji").html(text).css("color", colors[type] || "");
     }
 
-    function playSnd(type, force = false) {
+	function unlockSystem() {
+    isLocked = false;
+    refreshPanelsExt("normal"); // キャラを通常顔(_1)に戻し、アニメを止める
+    console.log("System Unlocked");
+}
+
+	
+   // 【復旧版】画像・背景色・アニメーションを全て網羅
+function refreshPanelsExt(mode = "normal") {
+    if (winAnims && winAnims.length > 0) {
+        winAnims.forEach(anim => anim.kill());
+        winAnims = [];
+    }
+    $(".celebrate-chara").remove();
+
+    // 2手目の時だけ、事前に「どの3つを変化させるか」を決める
+    let specialThree = [];
+    if (mode === "win" && selectedSteps === 2) {
+        let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        specialThree = nums.sort(() => 0.5 - Math.random()).slice(0, 3);
+    }
+
+    panelState.forEach((num, index) => {
+        const targetId = `#p${index + 1}`;
+        
+        // 1. スタイルのリセット（ただし背景色以外）
+        // clearProps: "all" を使うと色も消えるので、特定のプロパティに絞ります
+        gsap.set(targetId, { clearProps: "transform,scale,background-image" });
+
+        if (mode === "win") {
+            const steps = Math.max(1, selectedSteps);
+            let imgFile = null;
+            let shouldAnimate = false;
+
+            // --- A. 画像の選定ロジック（法則性の適用） ---
+            if (steps === 1) {
+                // 1手：変化なし
+            } 
+            else if (steps === 2) {
+                // 2手：ランダムに選ばれた3つだけ変化（動きなし）
+                if (specialThree.includes(num)) {
+                    // _1 か _2 をランダムで選んで法則の変化を見せる
+                    let type = Math.random() < 0.5 ? "_1" : "_2";
+                    imgFile = `conum${num}${type}.png`;
+                }
+            } 
+            else if (steps === 3) {
+                // 3手：全員変化（動きなし）
+                // _1か_2かを固定せず、あえてバラつかせて法則のセット感を見せる
+                let type = Math.random() < 0.5 ? "_1" : "_2";
+                imgFile = `conum${num}${type}.png`;
+            } 
+            else {
+                // 4手以上：全員変化 ＋ 動きあり
+                let type = Math.random() < 0.5 ? "_1" : "_2";
+                imgFile = `conum${num}${type}.png`;
+                shouldAnimate = true;
+            }
+
+            // --- B. 描画の実行 ---
+            if (imgFile) {
+                const rect = $(targetId)[0].getBoundingClientRect();
+                const $chara = $(`<img src="img/${imgFile}" class="celebrate-chara">`).css({
+                    position: 'absolute',
+                    top: rect.top + window.scrollY,
+                    left: rect.left + window.scrollX,
+                    width: rect.width,
+                    height: rect.height,
+                    zIndex: 9999,
+                    pointerEvents: 'none'
+                });
+                $('body').append($chara);
+
+                // 【ここがポイント！】背景画像を none にしても、
+                // CSSの背景色はそのまま残るので「薄い色」は消えません。
+                $(targetId).css('background-image', 'none');
+
+                if (shouldAnimate) {
+                    const power = steps - 3;
+                    const jumpY = -30 * power;
+                    const anim = gsap.to($chara, {
+                        y: jumpY,
+                        rotation: index % 2 === 0 ? (5 * power) : -(5 * power),
+                        duration: 0.8 - (power * 0.1),
+                        delay: index * 0.05,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: "sine.inOut"
+                    });
+                    winAnims.push(anim);
+                }
+            } else {
+                refreshSinglePanel(index, false);
+            }
+        } else {
+            // 通常時
+            refreshSinglePanel(index, false);
+        }
+    });
+}
+
+  function playSnd(type, force = false) {
         if (!force && isAnimating && type === 'push') return; 
         if (!isSoundOn) return;
         if (sounds[type]) {
@@ -176,7 +279,7 @@ $(function() {
         const num = panelState[index];
         const targetId = `#p${index + 1}`;
         const posColor = homeColors[index + 1];
-        gsap.set(targetId, { clearProps: "transform,scale" });
+        gsap.set(targetId, { clearProps: "all" });
         $(targetId).css({
             'background-image': `url(img/num${num}.png)`,
             'background-size': 'contain',
@@ -305,6 +408,7 @@ $(function() {
             const currentIdx = posMap[num - 1];
             if (currentIdx !== undefined) {
                 playSnd('push', true);
+                // 第3引数に false を渡して、個別の rotate 終了時に isAnimating を解除させない
                 await rotatePanels(currentIdx, true, false); 
                 await new Promise(r => setTimeout(r, 150 * ANI_SPEED)); 
             }
@@ -313,6 +417,10 @@ $(function() {
         const isHome = panelState.every((n, i) => n === i + 1);
 
         if (isHome) {
+            // --- 【重要】祝福とロックの開始 ---
+            isLocked = true; // パネルの物理操作をロック
+
+            // 1. 色彩司令官：成功の緑
             if (isChallengeMode && startTime > 0) {
                 const clearTime = ((performance.now() - startTime) / 1000).toFixed(2);
                 updateHyouji(clearTime + "s", "success");
@@ -322,15 +430,45 @@ $(function() {
             } else {
                 updateHyouji("✨ HOME ✨", "success");
             }
+
+            // 2. 画像・アニメーション司令官：ランダム画像選別 ＆ キャラ内部の無限ループ開始
+            refreshPanelsExt("win");
+            
+            // 3. 祝福の声
             playHomeVoiceByMoves();
+            
+            // ロック中なので、ここで isAnimating を解除してもパネルは触れません
+            isAnimating = false; 
+
         } else {
+        // --- 不正解（INCOMPLETE）時の処理 ---
             updateHyouji("INCOMPLETE", "error");
             playIncompleteVoice();
+            
+            // 1. 失敗の余韻を待つ前に、まずは「独立キャラ」を即座に消す
+            $(".celebrate-chara").remove();
+            if (winAnims) {
+                winAnims.forEach(anim => anim.kill());
+                winAnims = [];
+            }
+
+            // 2. 失敗の余韻
             await new Promise(r => setTimeout(r, 1500));
-            resetToInitial();
+
+            // 3. データの復元
+            panelState = [...savedState];
+            panelState.forEach((n, i) => posMap[n - 1] = i);
+            
+            // 4. パネルの背景設定を一旦リセット（念のための掃除）
+            $(".panel").css('background-image', ''); 
+
+            // 5. 通常モード("normal")で描き直し
+            // ここで imgFile が "numX.png" として評価されるようになります
+            refreshPanelsExt("normal"); 
+            
             updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
-        }
-        isAnimating = false; 
+            isAnimating = false;
+	}
     }
 
     function resetToInitial() {
@@ -423,29 +561,48 @@ $(function() {
             updateHyouji("READY?", "default");
             refreshPanels();
         } 
-        else if (id === "challenge-start") { startChallengeProcess(); }
+        else if (id === "challenge-start") { 
+	if (isAnimating) return;
+    if (isLocked) unlockSystem(); // ロック解除
+	startChallengeProcess(); 
+	}
         else if (id === "rank") { openGlobalRank(); }
     });
 
     $('.panel').on('click', function() {
-        if (isAnimating) return;
+        // 1. ガード：アニメーション中、またはクリア後のロック中は一切の入力を受け付けない
+        if (isAnimating || isLocked) return; 
+
         const idx = $(".panel").index(this);
+
         if (isComboMode && selectedSteps > 0) {
+            // --- COMBO モード時の入力処理 ---
             playSnd('click');
+
             if (inputBuffer.length < selectedSteps) {
+                // タップされた位置にあるパネルの「数字」をバッファに記録
                 inputBuffer.push(panelState[idx]);
+
+                // 表示の更新（例： "1 3 - -"）
                 let disp = inputBuffer.join(" ") + " -".repeat(selectedSteps - inputBuffer.length);
                 updateHyouji(disp.trim(), "ready");
-                if (inputBuffer.length === selectedSteps) setTimeout(executeCombo, 180);
+
+                // 指定手数に達したらコンボ実行
+                if (inputBuffer.length === selectedSteps) {
+                    setTimeout(executeCombo, 180);
+                }
             }
         } else {
+            // --- SINGLE モード時の通常回転 ---
             playSnd('push');
             rotatePanels(idx);
+            // ※ rotatePanels 内で refreshPanelsExt("normal") が呼ばれる想定です
         }
     });
 
     $("#input-mode").on("click", function() {
         if (isAnimating) return;
+	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
         isComboMode = !isComboMode;
         $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
@@ -460,6 +617,7 @@ $(function() {
 
     $("#tebo").on("click", function() {
         if (isAnimating) return;
+	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
         modeMoves = (modeMoves + 1) % 7;
         $(this).text(modeMoves);
@@ -475,6 +633,7 @@ $(function() {
 
     $("#sebo").on("click", function() {
         if (isAnimating) return;
+	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
         selectedSteps = modeMoves; 
         inputBuffer = [];
@@ -505,6 +664,7 @@ $(function() {
 
     $("#resebo").on("click", function() {
         if (isAnimating || isChallengeMode) return;
+	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
         if (savedState && savedState.length > 0) {
             panelState = [...savedState];
