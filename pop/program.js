@@ -148,20 +148,40 @@ function refreshPanelsExt(mode = "normal") {
                 // CSSの背景色はそのまま残るので「薄い色」は消えません。
                 $(targetId).css('background-image', 'none');
 
-                if (shouldAnimate) {
-                    const power = steps - 3;
-                    const jumpY = -30 * power;
-                    const anim = gsap.to($chara, {
-                        y: jumpY,
-                        rotation: index % 2 === 0 ? (5 * power) : -(5 * power),
-                        duration: 0.8 - (power * 0.1),
-                        delay: index * 0.05,
-                        yoyo: true,
-                        repeat: -1,
-                        ease: "sine.inOut"
-                    });
-                    winAnims.push(anim);
-                }
+   if (shouldAnimate) {
+    // 4手: power=1, 5手: power=2, 6手: power=3
+    const power = steps - 3;
+    
+    // 【調整】2乗をやめ、ベース数値を固定してマイルドに加算
+    // 4手: -20, 5手: -40, 6手: -60 程度の安定した跳躍
+    const jumpY = -20 * power; 
+    const jumpX = 15 * power;
+    
+    // 回転も「激しすぎない」程度に
+    const rotDeg = 8 * power;
+
+    const startDir = (index % 2 === 0) ? 1 : -1;
+    
+    // 【調整】早すぎないように duration の下限を設定
+    // 4手: 1.2s, 5手: 1.0s, 6手: 0.8s くらいで、しっかり「往復」を見せる
+    const dur = 1.4 - (power * 0.2); 
+
+    const anim = gsap.to($chara, {
+        keyframes: {
+            "0%":   { x: 0, y: 0, rotation: 0 },
+            "25%":  { x: jumpX * startDir, y: jumpY, rotation: rotDeg * startDir, ease: "sine.out" },
+            "50%":  { x: 0, y: 0, rotation: 0, ease: "sine.in" },
+            "75%":  { x: -jumpX * startDir, y: jumpY, rotation: -rotDeg * startDir, ease: "sine.out" },
+            "100%": { x: 0, y: 0, rotation: 0, ease: "sine.in" }
+        },
+        duration: dur,
+        delay: index * 0.05,
+        repeat: -1,
+        ease: "none"
+    });
+
+    winAnims.push(anim);
+}
             } else {
                 refreshSinglePanel(index, false);
             }
