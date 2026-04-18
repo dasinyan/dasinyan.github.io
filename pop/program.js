@@ -238,6 +238,9 @@ function refreshPanelsExt(mode = "normal") {
         $("#tebo").text(modeMoves);
         
         playSnd('click');
+
+	updateUIState(false); 
+        currentAnswer = [];
         updateHyouji("CONNECTING...", "network");
 
         await setDailyChallenge(selectedSteps);
@@ -409,7 +412,67 @@ function refreshPanelsExt(mode = "normal") {
             });
         });
     }
+// モーダル表示関数
+function openHowToModal() {
+    if ($("#how-to-modal").length === 0) {
+        $("body").append(`
+            <div id="how-to-modal" class="modal-overlay" style="display:none;">
+                <div class="modal-content">
+                    <div class="tab-container" style="margin-bottom: 15px;">
+                        <button class="tab-btn active" onclick="switchHowToLang('en')">English</button>
+                        <button class="tab-btn" onclick="switchHowToLang('ja')">日本語</button>
+                    </div>
+                    
+                    <div id="how-to-body" style="min-height: 200px; text-align: left; font-family: sans-serif;">
+                        </div>
 
+                    <button class="bot" onclick="$('#how-to-modal').fadeOut(200)" 
+                            style="width:100%; background:#90a4ae; margin-top:20px; box-shadow: 0 5px 0 #546e7a;">
+                        CLOSE
+                    </button>
+                </div>
+            </div>
+        `);
+    }
+    // 開くたびに初期言語（または現在の設定）を表示
+    switchHowToLang('en'); 
+    $("#how-to-modal").fadeIn(200);
+}
+
+const howToTexts = {
+    en: {
+        title: "HOW TO PLAY",
+        content: `
+            <p style="font-weight:bold; color:#3498db;">1. Basic Rule</p>
+            <p>Align three panels of the same color to clear the board.</p>
+            <p style="margin-top:10px; font-weight:bold; color:#e67e22;">2. Combo Mode</p>
+            <p>Tap panels to set your moves, then watch the magic happen!</p>
+        `
+    },
+    ja: {
+        title: "遊び方",
+        content: `
+            <p style="font-weight:bold; color:#3498db;">1. 基本ルール</p>
+            <p>同じ色のパネルを3つ並べて、盤面を完成させましょう。</p>
+            <p style="margin-top:10px; font-weight:bold; color:#e67e22;">2. コンボモード</p>
+            <p>指定した手数分パネルをタップすると、一気に回転が始まります！</p>
+        `
+    }
+};
+
+window.switchHowToLang = function(lang) {
+    // ボタンの見た目を切り替え
+    $("#how-to-modal .tab-btn").removeClass("active");
+    if(lang === 'en') $("#how-to-modal .tab-btn:eq(0)").addClass("active");
+    else $("#how-to-modal .tab-btn:eq(1)").addClass("active");
+
+    // 中身を書き換え
+    const data = howToTexts[lang];
+    $("#how-to-body").html(`
+        <h2 style="font-family:'Fredoka One'; font-size:18px; color:#546e7a; text-align:center; margin-bottom:10px;">${data.title}</h2>
+        <div>${data.content}</div>
+    `);
+};
     async function executeCombo() {
         if (inputBuffer.length !== selectedSteps || selectedSteps === 0) {
             isAnimating = false; 
@@ -566,6 +629,11 @@ function refreshPanelsExt(mode = "normal") {
 
     // --- イベント登録 ---
 
+$('#how-to-btn').click(function() {
+    playSnd('click');
+    openHowToModal();
+});
+
     $('.bot').click(function() {
         if (isAnimating) return;
         playSnd('click');
@@ -638,6 +706,12 @@ function refreshPanelsExt(mode = "normal") {
     $("#tebo").on("click", function() {
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
+
+	if (isChallengeMode) {
+        isChallengeMode = false;
+        startTime = 0;
+        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
+    }
         playSnd('click');
         modeMoves = (modeMoves + 1) % 7;
         $(this).text(modeMoves);
@@ -654,6 +728,12 @@ function refreshPanelsExt(mode = "normal") {
     $("#sebo").on("click", function() {
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
+
+	if (isChallengeMode) {
+        isChallengeMode = false;
+        startTime = 0;
+        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
+    }
         playSnd('click');
         selectedSteps = modeMoves; 
         inputBuffer = [];
