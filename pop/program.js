@@ -443,19 +443,31 @@ const howToTexts = {
     en: {
         title: "HOW TO PLAY",
         content: `
-            <p style="font-weight:bold; color:#3498db;">1. Basic Rule</p>
-            <p>Align three panels of the same color to clear the board.</p>
-            <p style="margin-top:10px; font-weight:bold; color:#e67e22;">2. Combo Mode</p>
-            <p>Tap panels to set your moves, then watch the magic happen!</p>
+            <p>First, make sure the button on the top-left is set to <span style="color:#f1c40f; font-weight:bold;">"SINGLE"</span>, then tap any number above!</p>
+            <p>The rule is super easy: <span style="color:#e74c3c; font-weight:bold;">"The number you tap stays still. All the others hop one spot clockwise!"</span></p>
+
+            <p style="margin-top:10px;">Pick a difficulty from 0 to 6. Pick <span style="color:#e67e22; font-weight:bold;">"0"</span> and hit <span style="color:#2ecc71; font-weight:bold;">"SET"</span>. We’ll show you our <span style="color:#3498db; font-weight:bold;">"HOME"</span>!</p>
+            
+            <p style="margin-top:10px;">Try <span style="color:#e67e22; font-weight:bold;">"1"</span> and hit <span style="color:#2ecc71; font-weight:bold;">"SET"</span>. You are just one tap away! Can you guess which number to tap? Hint: <span style="color:#e74c3c; font-weight:bold;">"Just tap the one number you want to keep in its place!"</span></p>
+
+            <p style="margin-top:10px;"><span style="color:#9b59b6; font-weight:bold;">"PEEK"</span> shows the first move, and <span style="color:#c0392b; font-weight:bold;">"FORBIDDEN FRUIT"</span>... well, it’s a secret!</p>
+            
+            <p style="margin-top:10px;">Ready? Try the <span style="color:#e74c3c; font-weight:bold;">"Daily Challenge"</span>! Hit <span style="color:#3498db; font-weight:bold;">"START"</span> and check the <span style="color:#f1c40f; font-weight:bold;">"RANK"</span>. Can you make it into the <span style="color:#e74c3c; font-weight:bold;">TOP 5</span>?</p>
         `
     },
     ja: {
         title: "遊び方",
         content: `
-            <p style="font-weight:bold; color:#3498db;">1. 基本ルール</p>
-            <p>同じ色のパネルを3つ並べて、盤面を完成させましょう。</p>
-            <p style="margin-top:10px; font-weight:bold; color:#e67e22;">2. コンボモード</p>
-            <p>指定した手数分パネルをタップすると、一気に回転が始まります！</p>
+            <p>まずは左上のボタンが <span style="color:#4fc3f7; font-weight:bold;">「SINGLE」</span> の時に、上の数字たちをどれか一回押してみて！</p>
+            <p>ルールはとっても簡単：<span style="color:#e74c3c; font-weight:bold;">「押した数字はそのままで、それ以外の数字がぜんぶ、時計回りに動いてくれる」</span>んだ</p>
+
+            <p style="margin-top:10px;">下の赤いボタンで、難しさを 0 から 6 まで選べるよ。<span style="color:#ef5350; font-weight:bold;">「0」</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">「SET」</span> を押すと、ぼくたちの <span style="color:#3498db; font-weight:bold;">「HOME（ホーム）」</span> を教えてあげるね。</p>
+            
+            <p style="margin-top:10px;">次は <span style="color:#ef5350; font-weight:bold;">「1」</span> を選んで <span style="color:#ffd54f; font-weight:bold;">「SET」</span> を押してみて。あと1回だれかを押せばゴールだよ。ヒントはね、<span style="color:#e74c3c; font-weight:bold;">「動かしたくない数字を、直接ポチッとする」</span>ことだよ！</p>
+
+            <p style="margin-top:10px;"><span style="color:#8bc34a; font-weight:bold;">「PEEK」</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">「FORBIDDEN FRUIT」</span> を押せば……何かが起きるかも！？</p>
+            
+            <p style="margin-top:10px;">慣れてきたら <span style="color:#90a4ae; font-weight:bold;">「デイリーチャレンジ」</span> に挑戦だ！ <span style="color:#90a4ae; font-weight:bold;">「START」</span> を押して世界中のみんなと競争しよう！ <span style="color:#90a4ae; font-weight:bold;">「RANK」</span> で <span style="color:#e74c3c; font-weight:bold;">TOP 5</span> には入れたかな？</p>
         `
     }
 };
