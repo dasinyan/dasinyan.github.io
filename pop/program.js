@@ -441,20 +441,41 @@ function openHowToModal() {
 
 const howToTexts = {
     en: {
-        title: "HOW TO PLAY",
-        content: `
-            <p>First, make sure the button on the top-left is set to <span style="color:#f1c40f; font-weight:bold;">"SINGLE"</span>, then tap any number above!</p>
-            <p>The rule is super easy: <span style="color:#e74c3c; font-weight:bold;">"The number you tap stays still. All the others hop one spot clockwise!"</span></p>
+    title: "HOW TO PLAY",
+    content: `
+        <p>First, make sure the button on the top-left is set to <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span>, then tap any number above!</p>
+        <p>See? We're all jumping around!</p>		
+        <p>The rule is super easy: <span style="color:#e74c3c; font-weight:bold;">The number you tap stays still. All the others hop one spot clockwise!</span></p>
 
-            <p style="margin-top:10px;">Pick a difficulty from 0 to 6. Pick <span style="color:#e67e22; font-weight:bold;">"0"</span> and hit <span style="color:#2ecc71; font-weight:bold;">"SET"</span>. We’ll show you our <span style="color:#3498db; font-weight:bold;">"HOME"</span>!</p>
-            
-            <p style="margin-top:10px;">Try <span style="color:#e67e22; font-weight:bold;">"1"</span> and hit <span style="color:#2ecc71; font-weight:bold;">"SET"</span>. You are just one tap away! Can you guess which number to tap? Hint: <span style="color:#e74c3c; font-weight:bold;">"Just tap the one number you want to keep in its place!"</span></p>
+        <p style="margin-top:10px;">
+        <p>Use the red buttons to pick a difficulty from 0 to 6.</p>
+        <p>Pick <span style="color:#ef5350; font-weight:bold;">[0]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>. We’ll show you our <span style="color:#8bc34a; font-weight:bold;">"HOME"</span>!</p>
+        <p>The goal is to lead every number back to its <span style="color:#8bc34a; font-weight:bold;">"HOME"</span>!</p>
+  
+        <p style="margin-top:10px;">
+        <p>Now, pick <span style="color:#ef5350; font-weight:bold;">[1]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>!</p>
+        <p>You can reach the goal in just one tap.</p>
+        <p>Here’s a hint: <span style="color:#8bc34a; font-weight:bold;">Just tap the one number you want to keep in its place!</span></p>
 
-            <p style="margin-top:10px;"><span style="color:#9b59b6; font-weight:bold;">"PEEK"</span> shows the first move, and <span style="color:#c0392b; font-weight:bold;">"FORBIDDEN FRUIT"</span>... well, it’s a secret!</p>
+        <p style="margin-top:10px;">
+        <p>Once you've got it, try picking <span style="color:#ef5350; font-weight:bold;">[2]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>.</p>
+        <p>It gets trickier and trickier as the numbers go up!</p>
+
+        <p style="margin-top:10px;">
+        <p>In <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span> mode, we move with every tap. In <span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span> mode, we wait until you enter all your moves.</p>
+
+        <p style="margin-top:10px;">
+        <p>Tap <span style="color:#8bc34a; font-weight:bold;">"PEEK"</span> to glimpse the first move, and use <span style="color:#8bc34a; font-weight:bold;">"FORBIDDEN FRUIT"</span> at your own risk♪</p>
             
-            <p style="margin-top:10px;">Ready? Try the <span style="color:#e74c3c; font-weight:bold;">"Daily Challenge"</span>! Hit <span style="color:#3498db; font-weight:bold;">"START"</span> and check the <span style="color:#f1c40f; font-weight:bold;">"RANK"</span>. Can you make it into the <span style="color:#e74c3c; font-weight:bold;">TOP 5</span>?</p>
-        `
-    },
+        <p style="margin-top:10px;">
+        <p>Ready for a real test? Try the <span style="color:#90a4ae; font-weight:bold;">Daily Challenge</span>!</p>
+        <p><span style="color:#90a4ae; font-weight:bold;">[MODE 3]</span> takes 3 taps, and <span style="color:#90a4ae; font-weight:bold;">[MODE 4]</span> takes 4. Which will you choose?</p>
+        <p>Hit <span style="color:#90a4ae; font-weight:bold;">[START]</span> to race players from all over the world!</p>
+
+        <p>You can check the scores with <span style="color:#90a4ae; font-weight:bold;">[RANK]</span>.</p>
+        <p>Can you make it into the TOP 5?</p>
+    `
+},
     ja: {
         title: "遊び方",
         content: `
@@ -464,8 +485,9 @@ const howToTexts = {
 
             <p style="margin-top:10px;">
 	<p>下の赤いボタンで、難しさを 0 から 6 まで選べるよ</p>
-	<p><span style="color:#ef5350; font-weight:bold;">[0]</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押すと、僕たちの <span style="color:#8bc34a; font-weight:bold;">[HOME]</span> を教えてあげるね</p>
-            
+	<p><span style="color:#ef5350; font-weight:bold;">[0]</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押すと、僕たちの <span style="color:#8bc34a; font-weight:bold;">「HOME」</span> を教えてあげるね</p>
+	<p>パズルのゴールは、みんなをこの<span style="color:#8bc34a; font-weight:bold;">「HOME」</span>に連れていくことだよ！</p>
+  
             <p style="margin-top:10px;">
 	<p>次は <span style="color:#ef5350; font-weight:bold;">[1]</span> を選んで <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押してみて!</p>
 	<p>あと1回だれかを押せばゴールだよ</p>
