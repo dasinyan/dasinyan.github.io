@@ -458,16 +458,36 @@ const howToTexts = {
     ja: {
         title: "遊び方",
         content: `
-            <p>まずは左上のボタンが <span style="color:#4fc3f7; font-weight:bold;">「SINGLE」</span> の時に、上の数字たちをどれか一回押してみて！</p>
-            <p>ルールはとっても簡単：<span style="color:#e74c3c; font-weight:bold;">「押した数字はそのままで、それ以外の数字がぜんぶ、時計回りに動いてくれる」</span>んだ</p>
+            <p>まずは左上のボタンが <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span> の時に、上の数字たちをどれか一回押してみて！</p>
+	    <p>数字たちが元気に動くのがわかるよね</p>		
+            <p>動くルールはとっても簡単：<span style="color:#e74c3c; font-weight:bold;">押した数字はそのままで、それ以外の数字がぜんぶ、時計回りに動いてくれる</span>んだ</p>
 
-            <p style="margin-top:10px;">下の赤いボタンで、難しさを 0 から 6 まで選べるよ。<span style="color:#ef5350; font-weight:bold;">「0」</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">「SET」</span> を押すと、ぼくたちの <span style="color:#3498db; font-weight:bold;">「HOME（ホーム）」</span> を教えてあげるね。</p>
+            <p style="margin-top:10px;">
+	<p>下の赤いボタンで、難しさを 0 から 6 まで選べるよ</p>
+	<p><span style="color:#ef5350; font-weight:bold;">[0]</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押すと、僕たちの <span style="color:#8bc34a; font-weight:bold;">[HOME]</span> を教えてあげるね</p>
             
-            <p style="margin-top:10px;">次は <span style="color:#ef5350; font-weight:bold;">「1」</span> を選んで <span style="color:#ffd54f; font-weight:bold;">「SET」</span> を押してみて。あと1回だれかを押せばゴールだよ。ヒントはね、<span style="color:#e74c3c; font-weight:bold;">「動かしたくない数字を、直接ポチッとする」</span>ことだよ！</p>
+            <p style="margin-top:10px;">
+	<p>次は <span style="color:#ef5350; font-weight:bold;">[1]</span> を選んで <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押してみて!</p>
+	<p>あと1回だれかを押せばゴールだよ</p>
+	<p>ヒントはね、<span style="color:#8bc34a; font-weight:bold;">動かしたくない数字を、直接ポチッとする</span>ことだよ！</p>
 
-            <p style="margin-top:10px;"><span style="color:#8bc34a; font-weight:bold;">「PEEK」</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">「FORBIDDEN FRUIT」</span> を押せば……何かが起きるかも！？</p>
+	<p style="margin-top:10px;">
+	<p>わかるようになったら<span style="color:#ef5350; font-weight:bold;">[2]</span>を選んで<span style="color:#ffd54f; font-weight:bold;">[SET]</span>を押そう </p>
+	<p>数を増やせば、どんどん手強くなるからね</p>
+
+	<p style="margin-top:10px;">
+	<p><span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span>だと一回ずつ動くけど、<span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span>にすると、答えをぜんぶ入れ終わるまで数字たちはじっと待っててくれるよ</p>
+
+            <p style="margin-top:10px;">
+	<p><span style="color:#8bc34a; font-weight:bold;">「PEEK」</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">「FORBIDDEN FRUIT」</span> は自己責任で♪</p>
             
-            <p style="margin-top:10px;">慣れてきたら <span style="color:#90a4ae; font-weight:bold;">「デイリーチャレンジ」</span> に挑戦だ！ <span style="color:#90a4ae; font-weight:bold;">「START」</span> を押して世界中のみんなと競争しよう！ <span style="color:#90a4ae; font-weight:bold;">「RANK」</span> で <span style="color:#e74c3c; font-weight:bold;">TOP 5</span> には入れたかな？</p>
+            <p style="margin-top:10px;">
+	<p>慣れてきたら <span style="color:#90a4ae; font-weight:bold;">デイリーチャレンジ</span> に挑戦だ！</p>
+	<p><span style="color:#90a4ae; font-weight:bold;">[MODE3]</span> なら３回、<span style="color:#90a4ae; font-weight:bold;">[MODE4]</span>なら４回押せば解ける問題、どちらを選ぶ？ </p>
+	<p><span style="color:#90a4ae; font-weight:bold;">[START]</span> を押して世界中のみんなと競争しよう！ </p>
+
+	<p><span style="color:#90a4ae; font-weight:bold;">[RANK]</span>でランキングの確認が出来るよ</p>
+	<p>TOP 5 には入れたかな？</p>
         `
     }
 };
