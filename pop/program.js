@@ -501,7 +501,7 @@ const howToTexts = {
 	<p><span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span>だと一回ずつ動くけど、<span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span>にすると、答えをぜんぶ入れ終わるまで数字たちはじっと待っててくれるよ</p>
 
             <p style="margin-top:10px;">
-	<p><span style="color:#8bc34a; font-weight:bold;">「PEEK」</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">「FORBIDDEN FRUIT」</span> は自己責任で♪</p>
+	<p><span style="color:#8bc34a; font-weight:bold;">[PEEK]</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">[FORBIDDEN FRUIT]</span> は自己責任で♪</p>
             
             <p style="margin-top:10px;">
 	<p>慣れてきたら <span style="color:#90a4ae; font-weight:bold;">デイリーチャレンジ</span> に挑戦だ！</p>
