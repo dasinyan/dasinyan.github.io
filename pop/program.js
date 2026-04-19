@@ -465,7 +465,7 @@ const howToTexts = {
         <p>In <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span> mode, we move with every tap. In <span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span> mode, we wait until you enter all your moves.</p>
 
         <p style="margin-top:10px;">
-        <p>Tap <span style="color:#8bc34a; font-weight:bold;">"PEEK"</span> to glimpse the first move, and use <span style="color:#8bc34a; font-weight:bold;">"FORBIDDEN FRUIT"</span> at your own risk♪</p>
+        <p>Tap <span style="color:#8bc34a; font-weight:bold;">[PEEK]</span> to glimpse the first move, and use <span style="color:#8bc34a; font-weight:bold;">[FORBIDDEN FRUIT]</span> at your own risk♪</p>
             
         <p style="margin-top:10px;">
         <p>Ready for a real test? Try the <span style="color:#90a4ae; font-weight:bold;">Daily Challenge</span>!</p>
