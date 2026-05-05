@@ -305,6 +305,15 @@ body {
     z-index: 10; /* 数字を泡より手前に */
 }
 
+/* スマホ用に上書き */
+@media (max-width: 768px) {
+    .dancing-bg {
+        background-size: 200% 200%;     /* 軽くする */
+        animation-duration: 12s;        /* ゆっくりする */
+        /* animation-timing-function: linear;  ← 必要なら追加 */
+    }
+}
+
 /* ヘルプ専用の装飾 */
 .help-step-img {
     width: 80px; height: 80px;
