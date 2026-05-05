@@ -252,6 +252,59 @@ body {
   font-weight: bold;
 }
 
+/* --- ダンス演出セット：ここから --- */
+
+/* 1. 外側の世界（背景全体）の設定 */
+.dancing-bg {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff176 25%, #fffde7 50%, #fff176 75%, #fff9c4 100%);
+    background-size: 400% 400%;
+    animation: lemonGradient 5s ease infinite;
+    transition: background 1.0s ease;
+}
+
+/* 2. 内側の箱（パズル盤面）を透明にする設定 */
+/* 「bodyに.dancing-bgがついている時の#content」という意味です */
+.dancing-bg #content {
+    background: transparent !important;
+    box-shadow: none;
+    transition: background 1.0s ease;
+}
+
+/* 3. 背景が動くためのアニメーション定義 */
+@keyframes lemonGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- ダンス演出セット：ここまで --- */
+
+/* 2. 泡のスタイル */
+.lemon-bubble {
+    position: fixed;
+    bottom: -50px;
+    /* 1. 泡のメイン色：透明感のあるスカイブルー */
+    background: rgba(179, 229, 252, 0.6); 
+    
+    /* 2. 縁取り：少し濃いめの水色で輪郭をはっきりさせる */
+    border: 1px solid rgba(129, 212, 250, 0.8);
+    
+    /* 3. 仕上げ：内側に白いハイライトを入れて「光る泡」感を出す */
+    box-shadow: inset -2px -2px 4px rgba(255, 255, 255, 0.5),
+                0 0 10px rgba(129, 212, 250, 0.3);
+                
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000 !important;
+}
+/* 泡が数字のすぐ後ろを通るようにレイヤー順を調整 */
+.lemon-bubble {
+    z-index: 1; 
+}
+.frenzy-ghost {
+    z-index: 10; /* 数字を泡より手前に */
+}
+
 /* ヘルプ専用の装飾 */
 .help-step-img {
     width: 80px; height: 80px;

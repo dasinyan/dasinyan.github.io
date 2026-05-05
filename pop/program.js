@@ -31,7 +31,10 @@ $(function() {
     let currentDayOffset = 0; 
 	let isLocked = false; // クリア後の演出用ロック
 	let winAnims = []; // 祝福アニメーションを保持する配列
-
+	
+// 他のフラグ（isLocked など）の近くに配置します
+let isDancing = false; 
+let stopDanceRequest = false; // 中止命令を伝達するためのフラグ
     const ANI_SPEED = 1.0;
 
     const homeColors = {
@@ -57,7 +60,45 @@ $(function() {
         complete: new Audio('sound/complete.mp3')
     };
 
+// ダンス用のグローバル変数
+let danceGhosts = [];
+
+// 関数の外（ファイルの上のほう）で宣言だけしておく
+let danceAudio = null;
+
     // --- 2. 共通関数 ---
+
+// startHoneyLemonSequence()の外側に定義
+function abortDance() {
+    if (!isDancing) return; 
+	$('body').removeClass('dancing-bg');
+    clearBubbles(); // 泡をお掃除
+
+    console.log("Dance Aborted: 割り込みによる強制終了");
+
+    // 1. 音を即座に消す（あるいは短いフェードアウト）
+    if (danceAudio) {
+        gsap.to(danceAudio, { 
+            volume: 0, 
+            duration: 0.3, 
+            onComplete: () => {
+                danceAudio.pause();
+                danceAudio = null;
+            }
+        });
+    }
+
+    // 2. GSAPの進行中のアニメーションをすべて殺す
+    gsap.killTweensOf(".frenzy-ghost");
+
+    // 3. 画面上のゴーストを物理的に消去
+    clearAllDanceEffects(); 
+
+    // 4. フラグの解除
+    isDancing = false;
+    isLocked = false;
+    stopDanceRequest = true; // startHoneyLemonSequence内のループを止める用
+}
 
     // 【新設】色彩司令官：#hyouji の表示を一括管理
     function updateHyouji(text, type = "default") {
@@ -77,60 +118,704 @@ $(function() {
     console.log("System Unlocked");
 }
 
+
+function clearAllDanceEffects() {
+    console.log("Cleaning up the stage...");
+
+    // 1. 数字（ゴースト）の消去
+    if (typeof $allGhosts !== 'undefined') {
+        $allGhosts.remove(); // 冒頭で取得した変数があれば一気に消去
+    }
+    $(".frenzy-ghost").remove(); // 念のためクラス名でも一掃
+    
+    // 2. パズル実体の復元
+    $(".panel").css('visibility', 'visible'); 
+    
+    // 3. アニメーション（GSAP）の強制停止
+    gsap.killTweensOf(".frenzy-ghost");
+    gsap.killTweensOf(".lemon-bubble");
+
+    // 4. 背景演出の解除（今回追加分）
+    $('body').removeClass('dancing-bg');
+    clearBubbles(); // 泡の消去関数を呼び出す
+
+    // 5. フラグの初期化
+    isDancing = false;
+    isLocked = false;
+}
+
+// ゴースト（影武者）を生成して配置する関数
+function createDanceGhosts() {
+    clearAllDanceEffects(); // 二重生成防止
+    
+    for (let i = 1; i <= 9; i++) {
+        const $panel = $(`#p${i}`);
+        const rect = $panel[0].getBoundingClientRect();
+        const num = $panel.text().trim(); // 現在の数字を取得
+
+        const $ghost = $(`<div class="frenzy-ghost"></div>`).css({
+            position: 'fixed',
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            backgroundImage: `url(img/conum${num}_1.png)`, // まずは基本画像
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            zIndex: 10000,
+            pointerEvents: 'none'
+        }).attr('data-home', i); // どのHOMEにいるか記録
+
+        $('body').append($ghost);
+        danceGhosts.push($ghost);
+        $panel.css('visibility', 'hidden'); // 実体を隠す
+    }
+}
+
+
+function createDanceGhosts() {
+    clearAllDanceEffects();
+    for (let i = 1; i <= 9; i++) {
+        const $panel = $(`#p${i}`);
+        const rect = $panel[0].getBoundingClientRect();
+        // 現在のパネルに表示されている「数字」を取得
+        const num = panelState[i-1]; 
+
+        const $ghost = $(`<div class="frenzy-ghost"></div>`).css({
+            position: 'fixed',
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            backgroundImage: `url(img/conum${num}_1.png)`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            zIndex: 10000,
+            pointerEvents: 'none'
+        }).attr('data-home', i).attr('data-num', num);
+
+        $('body').append($ghost);
+        danceGhosts.push($ghost);
+        $panel.css('visibility', 'hidden');
+    }
+}
+
+// 補助関数：指定したHOMEをタップした時の動きを再現
+function danceStepLogic(targetHome, duration) {
+    const clickedIdx = targetHome - 1;
+    const routes = {
+        0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
+        2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
+        4: [1, 0, 3, 6, 7, 8, 5, 2], 5: [4, 2, 1, 0, 3, 6, 7, 8],
+        6: [4, 7, 8, 5, 2, 1, 0, 3], 7: [4, 8, 5, 2, 1, 0, 3, 6],
+        8: [4, 5, 2, 1, 0, 3, 6, 7]
+    };
+
+    const targets = routes[clickedIdx];
+    const ghosts = $(".frenzy-ghost");
+
+    ghosts.each(function() {
+        const $g = $(this);
+        const currentPos = Number($g.attr('data-home')) - 1;
+
+        if (currentPos === clickedIdx) {
+            // タップされた場所はピョコっと跳ねる
+            gsap.to($g, {
+                y: -40,
+                duration: duration / 2,
+                yoyo: true,
+                repeat: 1,
+                ease: "power2.out"
+            });
+        } else if (targets.includes(currentPos)) {
+            // それ以外は logicRotate のルートで移動
+            const routeIdx = targets.indexOf(currentPos);
+            const nextRouteIdx = (routeIdx + 7) % 8; 
+            const nextPos = targets[nextRouteIdx];
+            const rect = $(`#p${nextPos + 1}`)[0].getBoundingClientRect();
+
+            gsap.to($g, {
+                top: rect.top,
+                left: rect.left,
+                duration: duration,
+                ease: "back.out(1.2)",
+                onStart: () => {
+                    // ここで居場所を更新することで、次のループの計算が正しくなる
+                    $g.attr('data-home', nextPos + 1);
+                }
+            });
+        }
+    });
+}
+
+
+// ヘルパー関数：ルート計算（変更なし）
+function getClockwisePath(start, goal) {
+    const route = [1, 2, 3, 6, 9, 8, 7, 4];
+    let idx = route.indexOf(start);
+    let path = [start];
+    for (let i = 0; i < 3; i++) {
+        idx = (idx + 1) % 8; 
+        path.push(route[idx]);
+    }
+    return path;
+}
+
+async function startHoneyLemonSequence() {
+    console.log("Dance Start: しゅわしゅわハニーレモン350ml");
+	 updateHyouji("ｼｭﾜｼｭﾜﾊﾆｰﾚﾓﾝ350ml", "success");
+
+	$('body').addClass('dancing-bg');
+    createBubbles();
+
+	const checkAbort = () => {
+        if (stopDanceRequest) {
+            // ここで abortDance を呼べば、音も要素も一括でお掃除される
+            abortDance(); 
+            return true;
+        }
+        return false;
+    };
+
+	isDancing = true; // ダンス開始
+    stopDanceRequest = false; // 中止リクエストをリセット
+    
+    const beat = 0.48; 
+    const $allGhosts = $(".frenzy-ghost"); // 冒頭で一度だけ取得
+
+
+	// await wait(4);   4拍待つ
+const wait = (beats) => new Promise(r => setTimeout(r, beat * beats * 1000));
+
+    // --- フェーズ1 & 2: 往復ダンス ---
+    const fullRoute = [
+        ...[1, 2, 3, 6, 9, 8, 7, 4], 
+        ...[4, 7, 8, 9, 6, 3, 2, 1]  
+    ];
+
+    for (const home of fullRoute) {
+	if (checkAbort()) return;
+        for (let i = 0; i < 4; i++) {
+            if (typeof danceStepLogic === "function") {
+                danceStepLogic(home, beat * 0.8);
+            }
+            await new Promise(resolve => setTimeout(resolve, beat * 1000));
+        }
+    }
+
+    // --- フェーズ3: サビ突入 ---
+    console.log("サビ：フォーメーション展開開始！");
+    const $g5 = $allGhosts.filter(function() { return $(this).attr('data-num') == "5"; });
+    const otherNums = [2, 3, 6, 9, 8, 7, 4, 1];
+    const others = otherNums.map(n => $allGhosts.filter(function() { return $(this).attr('data-num') == n; }));
+
+    const $p5 = $("#p5");
+    const p5Rect = $p5[0].getBoundingClientRect();
+    const centerX = p5Rect.left;
+    const centerY = p5Rect.top;
+
+    let radius = 160; 
+    let currentAngleOffset = 0;
+
+    others.forEach(($g, i) => {
+        const angle = (i * 45 - 90) * (Math.PI / 180);
+        gsap.to($g, {
+            left: centerX + radius * Math.cos(angle),
+            top: centerY + radius * Math.sin(angle),
+            duration: beat,
+            ease: "power2.out"
+        });
+    });
+    gsap.to($g5, { left: centerX, top: centerY, duration: beat });
+
+    await new Promise(resolve => setTimeout(resolve, beat * 1000));
+
+    // --- フェーズ4: 加速公転 ---
+	// --- フェーズ4: 加速公転 ---
+if (checkAbort()) return;
+
+let frenzyBeat = beat;
+const totalSteps = 48; // 16ステップ(維持) + 32ステップ(加速) くらいが気持ちいいです
+const initialRadius = radius; // 開始時の半径を保持
+
+await wait(0.5);
+
+for (let step = 0; step < totalSteps; step++) {
+    if (checkAbort()) return;
+
+    // 5番のジャンプ（ビートに合わせて）
+    gsap.to($g5, { y: -50, duration: frenzyBeat * 0.4, yoyo: true, repeat: 1, ease: "power2.out" });
+
+    // --- ロジックの分岐点 ---
+    if (step < 16) {
+        // 最初の4x4拍：変化なし（等速円運動）
+        currentAngleOffset += 45; 
+        // radius と frenzyBeat はそのまま維持
+    } else {
+        // 17ステップ目以降：急速に加速・収束
+        currentAngleOffset += (45 + (step - 16) * 2); // 回転角もだんだん大きく
+        radius = Math.max(10, radius * 0.85); // 0.97よりも急激に（指数関数的収束）
+        
+        if (frenzyBeat > 0.1) {
+            frenzyBeat *= 0.88; // 速度も一気に上げる
+        }
+    }
+
+    others.forEach(($g, i) => {
+        const angle = (i * 45 - 90 + currentAngleOffset) * (Math.PI / 180);
+        gsap.to($g, {
+            left: centerX + radius * Math.cos(angle),
+            top: centerY + radius * Math.sin(angle),
+            duration: frenzyBeat * 0.9,
+            ease: "none"
+        });
+    });
+
+    await new Promise(resolve => setTimeout(resolve, frenzyBeat * 1000));
+}
+
+    // --- フェーズ5: はじけ飛び ---
+	
+if (checkAbort()) return;
+console.log("はじけ跳ぶ！躍動感MAX！");
+
+await new Promise(resolve => {
+    let completed = 0;
+    $allGhosts.each(function() {
+        const $g = $(this);
+        // 1. 爆発のベクトル：完全にランダムな方向へ
+        const angle = Math.random() * Math.PI * 2;
+        // 飛距離は画面外へ確実に消える程度に調整（1200は少し遠すぎるかもしれないので、300-500程度で十分な場合もあります）
+        const dist = 500; 
+
+        gsap.to($g, {
+            // 現在位置から指定した方向へ吹っ飛ばす
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist,
+            rotation: "random(-720, 720)", // 激しく回転
+            
+            // 2. スケール：0にするのではなく、大きくして迫り出させる！
+            scale: 3.0,           // 4倍まで巨大化して、カメラ（ユーザー）に向かってくる演出
+            opacity: 0,           // 巨大化しながら消えていく
+            
+            duration: 1.0,        // 少し短くして爆発の瞬発力を出す
+            ease: "expo.out",     // 最初が最高速で、徐々に減速する「爆発」のイージング
+            
+            onComplete: () => {
+		gsap.set($g, { x: 0, y: 0, scale: 1 });
+                completed++;
+                if (completed === $allGhosts.length) resolve();
+            }
+        });
+    });
+});
+
+// --- フェーズ6: 帰還シーケンス（連鎖バウンド・エラー対策版） ---
+	if (checkAbort()) return;
+console.log("フェーズ6: 連鎖帰還開始");
+
+// 登場順と出現位置の定義
+const returnSequence = [
+    { num: 1, startHome: 8 }, { num: 4, startHome: 9 },
+    { num: 7, startHome: 6 }, { num: 8, startHome: 3 },
+    { num: 9, startHome: 2 }, { num: 6, startHome: 1 },
+    { num: 3, startHome: 4 }, { num: 2, startHome: 7 }
+];
+
+// バウンド演出用の関数
+const startBouncing = ($target) => {
+    gsap.killTweensOf($target, "y"); // 既存のアニメーションを停止
+    return gsap.to($target, { 
+        y: -30, duration: beat / 2, yoyo: true, repeat: -1, ease: "power1.inOut" 
+    });
+};
+
+// 【5番の復帰】変数名を重複しないよう「currentP5Rect」に変更
+const currentP5Rect = $("#p5")[0].getBoundingClientRect();
+gsap.set($g5, { 
+    left: currentP5Rect.left + window.scrollX, 
+    top: currentP5Rect.top + window.scrollY, 
+    opacity: 1, scale: 1, rotation: 0 
+});
+startBouncing($g5);
+
+// 数字が一人ずつ順番に帰還する処理
+await wait(2);
+
+for (const item of returnSequence) {
+	if (checkAbort()) return;
+    const $g = $allGhosts.filter(function() { return $(this).attr('data-num') == item.num; });
+    const returnPath = getClockwisePath(item.startHome, item.num);
+
+    // プロデューサーの分析通り、1拍目に登場して3拍（移動回数分）で着くように制御
+    for (let i = 0; i < returnPath.length; i++) {
+	if (checkAbort()) return;
+        
+	const rect = $(`#p${returnPath[i]}`)[0].getBoundingClientRect();
+        const targetX = rect.left + window.scrollX;
+        const targetY = rect.top + window.scrollY;
+
+        if (i === 0) {
+            // 1拍目：出現（待機なしで即座に次の移動命令へ）
+		
+            gsap.set($g, { left: targetX, top: targetY, opacity: 1, scale: 1, rotation: 0 });
+		await wait(0.9);
+        } else {
+            // 2〜4拍目：移動
+            gsap.to($g, { 
+                left: targetX, 
+                top: targetY, 
+                duration: beat*0.9, 
+                ease: "power1.inOut" 
+            });
+            
+            // 移動のアニメーションが終わる（1拍分）のを待つ
+            await new Promise(r => setTimeout(r, beat * 1000));
+        }
+
+		
+    }
+    
+    // 【重要】HOMEに収まった瞬間にピョコピョコ開始！
+    startBouncing($g);
+
+    }
+
+// --- フェーズ7: フィナーレ・ダンス（バウンド強制停止・軌道重視版） ---
+	if (checkAbort()) return;
+console.log("フェーズ7: 移動するグループのバウンドを止めて開始します");
+
+const oddsExcluding5 = $allGhosts.filter(function() { 
+    const n = parseInt($(this).attr('data-num'));
+    return n % 2 !== 0 && n !== 5; 
+});
+const evens = $allGhosts.filter(function() { 
+    const n = parseInt($(this).attr('data-num'));
+    return n % 2 === 0; 
+});
+
+const squeeze5 = (isSqueezed) => {
+    gsap.to($g5, { scale: isSqueezed ? 0.7 : 1.0, duration: beat, ease: "power2.out" });
+};
+
+// --- フェーズ7: 軌道完全補正版（移動＋ジャンプの合成） ---
+
+const danceJump = async (group, isApproaching) => {
+    const p5Rect = $("#p5")[0].getBoundingClientRect();
+    const centerX = p5Rect.left + window.scrollX;
+    const centerY = p5Rect.top + window.scrollY;
+
+    group.each(function() {
+        const $this = $(this);
+        const rect = $this[0].getBoundingClientRect();
+        
+        if (isApproaching) {
+            gsap.killTweensOf($this); 
+            gsap.set($this, { y: 0 });
+
+            const moveX = (centerX - (rect.left + window.scrollX)) * 0.5;
+            const moveY = (centerY - (rect.top + window.scrollY)) * 0.5;
+            
+            // 【修正の核心】
+            // 1拍の中で「移動」を完了させつつ、y軸だけ「山なりのカーブ」を強くかける。
+            // 目的地（moveY）へ着地することを最優先し、その道中だけ少し浮かせる設定です。
+            gsap.to($this, { 
+                x: moveX, 
+                // 目標の高さ(moveY)へ直接向かわせつつ、
+                // CustomWiggleのような動きではなく、シンプルな power2.out で「吸い込み」を強調
+                y: moveY, 
+                duration: beat, 
+                ease: "power2.inOut",
+                onUpdate: function() {
+                    // アニメーションの進行度(0〜1)を取得
+                    const progress = this.progress();
+                    // 放物線の計算：進行度が0.5の時に最大(-30px程度)浮かせ、着地点では0に戻る
+                    // これにより、上段・下段に関わらず「5番へ向かう線」の上にジャンプが乗ります
+                    const jumpHeight = Math.sin(progress * Math.PI) * -30;
+                    gsap.set($this, { y: moveY * progress + jumpHeight });
+                }
+            });
+
+        } else {
+            // HOMEへ戻る
+            gsap.to($this, { 
+                x: 0, 
+                y: 0, 
+                duration: beat, 
+                ease: "power2.inOut",
+                onComplete: () => {
+                    startBouncing($this); 
+                }
+            });
+        }
+    });
+};
+// --- ダンス・メイン・シーケンス（全とっかえ） ---
+for (let loop = 0; loop < 4; loop++) {
+	if (checkAbort()) return;
+    for (let i = 0; i < 2; i++) {
+	if (checkAbort()) return;
+        squeeze5(true);
+        danceJump(evens, true);  
+        await wait(1); 
+        
+        squeeze5(false);
+        danceJump(evens, false); 
+        await wait(1); 
+    }
+    for (let i = 0; i < 2; i++) {
+	if (checkAbort()) return;
+        squeeze5(true);
+        danceJump(oddsExcluding5, true);
+        await wait(1);
+        
+        squeeze5(false);
+        danceJump(oddsExcluding5, false);
+        await wait(1);
+    }
+}
+
+// --- フェーズ8: カーテンコール（一人ずつ舞台を去る） ---
+    // ここが startHoneyLemonSequence 関数の「内側」であることを確認
+    console.log("フェーズ8: カーテンコール（退場）");
+
+    // クラス名が '.frenzy-ghost' か '.ghost-num' か、実際に付与している方を使ってください
+    const finalGhosts = Array.from(document.querySelectorAll('.frenzy-ghost'));
+
+    // シャッフル
+    for (let i = finalGhosts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [finalGhosts[i], finalGhosts[j]] = [finalGhosts[j], finalGhosts[i]];
+    }
+
+    // BGMの音量を徐々に下げる（danceAudioが定義されている前提）
+    if (typeof danceAudio !== 'undefined' && danceAudio) {
+        gsap.to(danceAudio, { volume: 0, duration: 10 });
+    }
+
+    for (const ghost of finalGhosts) {
+        gsap.to(ghost, {
+            duration: 1,
+            scale: 0,
+            opacity: 0,
+            y: "-=20",
+            ease: "power2.in",
+            onComplete: () => {
+                if (ghost.parentNode) ghost.remove();
+            }
+        });
+        
+        // 次の人が消えるまでの待ち時間を増やす
+    // 0.2拍だと速いので、0.5拍〜0.8拍くらいにすると音が消える速度と同期しやすくなります
+    await wait(0.9);
+    }
+	await wait(5);
+    // 最後に音を止める
+    if (typeof danceAudio !== 'undefined' && danceAudio) {
+        danceAudio.pause();
+        danceAudio = null; 
+    }
+
+    // お掃除とフラグ解禁
+    clearAllDanceEffects();
+    isDancing = false;
+    isLocked = false;
+
+    console.log("Dance Sequence Complete: The stage is clear.");
+
+} // ← startHoneyLemonSequence はここで閉じる！
+
+
+// タイムラインに直接アニメーションを予約する関数
+function addDanceStepToTimeline(timeline, targetHome, startTime, duration) {
+    const clickedIdx = targetHome - 1;
+    const routes = {
+        0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
+        2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
+        4: [1, 0, 3, 6, 7, 8, 5, 2], 5: [4, 2, 1, 0, 3, 6, 7, 8],
+        6: [4, 7, 8, 5, 2, 1, 0, 3], 7: [4, 8, 5, 2, 1, 0, 3, 6],
+        8: [4, 5, 2, 1, 0, 3, 6, 7]
+    };
+
+    const targets = routes[clickedIdx];
+    const ghosts = $(".frenzy-ghost");
+
+    ghosts.each(function() {
+        const $g = $(this);
+        const currentPos = Number($g.attr('data-home')) - 1;
+
+        if (currentPos === clickedIdx) {
+            // ピョコ
+            timeline.to($g, {
+                y: -40,
+                duration: duration / 2,
+                yoyo: true,
+                repeat: 1,
+                ease: "power1.inOut"
+            }, startTime);
+        } else if (targets.includes(currentPos)) {
+            // 移動
+            const routeIdx = targets.indexOf(currentPos);
+            const nextRouteIdx = (routeIdx + 7) % 8; 
+            const nextPos = targets[nextRouteIdx];
+            const rect = $(`#p${nextPos + 1}`)[0].getBoundingClientRect();
+
+            timeline.to($g, {
+                top: rect.top,
+                left: rect.left,
+                duration: duration,
+                ease: "none", // テンポ重視なら ease は none か power1.out が安定
+                onStart: () => $g.attr('data-home', nextPos + 1)
+            }, startTime);
+        }
+    });
+}
+
+// 泡を生成して飛ばす関数
+function createBubbles() {
+    console.log("泡生成プロセス開始"); // ブラウザのコンソールでこれが出るか確認！
+    
+    for (let i = 0; i < 20; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'lemon-bubble';
+        
+        // サイズと位置を直接指定（JS側で確実に数値を入れます）
+        const size = Math.random() * 20 + 15 + "px"; // 少し大きめに 10-25px
+        const left = Math.random() * 100 + "%";
+        
+        bubble.style.width = size;
+        bubble.style.height = size;
+        bubble.style.left = left;
+        
+        document.body.appendChild(bubble); // bodyに直接追加
+
+        // GSAPで動かす
+        gsap.to(bubble, {
+            y: -window.innerHeight - 100,
+            x: "random(-30, 30)",
+            duration: Math.random() * 3 + 4,
+            delay: Math.random() * 5,
+            repeat: -1,
+            ease: "none"
+        });
+    }
+}
+// 泡を消去する関数
+function clearBubbles() {
+    gsap.killTweensOf(".lemon-bubble");
+    $(".lemon-bubble").remove();
+}
+
+// 補助関数：Promiseを返さず、即座にアニメーションを開始するロジック
+function danceStepLogic(targetHome, duration) {
+    const clickedIdx = targetHome - 1;
+    const routes = {
+        0: [4, 3, 6, 7, 8, 5, 2, 1], 1: [4, 0, 3, 6, 7, 8, 5, 2],
+        2: [4, 1, 0, 3, 6, 7, 8, 5], 3: [4, 6, 7, 8, 5, 2, 1, 0],
+        4: [1, 0, 3, 6, 7, 8, 5, 2], 5: [4, 2, 1, 0, 3, 6, 7, 8],
+        6: [4, 7, 8, 5, 2, 1, 0, 3], 7: [4, 8, 5, 2, 1, 0, 3, 6],
+        8: [4, 5, 2, 1, 0, 3, 6, 7]
+    };
+
+    const targets = routes[clickedIdx];
+    const ghosts = $(".frenzy-ghost");
+
+    ghosts.each(function() {
+        const $g = $(this);
+        const currentPos = Number($g.attr('data-home')) - 1;
+
+        if (currentPos === clickedIdx) {
+            gsap.to($g, {
+                y: -40,
+                duration: duration / 2,
+                yoyo: true,
+                repeat: 1,
+                ease: "power2.out"
+            });
+        } else if (targets.includes(currentPos)) {
+            const routeIdx = targets.indexOf(currentPos);
+            const nextRouteIdx = (routeIdx + 7) % 8; 
+            const nextPos = targets[nextRouteIdx];
+            
+            const $nextPanel = $(`#p${nextPos + 1}`);
+            const rect = $nextPanel[0].getBoundingClientRect();
+
+            gsap.to($g, {
+                top: rect.top,
+                left: rect.left,
+                duration: duration,
+                ease: "back.out(1.2)",
+                onStart: () => {
+                    $g.attr('data-home', nextPos + 1);
+                }
+            });
+        }
+    });
+}
 	
    // 【復旧版】画像・背景色・アニメーションを全て網羅
-function refreshPanelsExt(mode = "normal") {
+async function refreshPanelsExt(mode = "normal") {
+    // 1. 既存のアニメーションとゴーストの掃除
     if (winAnims && winAnims.length > 0) {
         winAnims.forEach(anim => anim.kill());
         winAnims = [];
     }
     $(".celebrate-chara").remove();
+    // ダンス用ゴーストも掃除（もし存在すれば）
+    if (typeof clearAllDanceEffects === "function") clearAllDanceEffects();
 
-    // 2手目の時だけ、事前に「どの3つを変化させるか」を決める
+    // 2手目の時だけ、事前に「どの3つを変化させるか」を決める[cite: 1]
     let specialThree = [];
     if (mode === "win" && selectedSteps === 2) {
         let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         specialThree = nums.sort(() => 0.5 - Math.random()).slice(0, 3);
     }
 
+    const steps = Math.max(1, selectedSteps);
+
+    // 【重要】6手以上の場合は、個別パネルの更新をスキップしてダンスシーケンスへ[cite: 1]
+    if (mode === "win" && steps >= 6) {
+        isLocked = true;
+        // 音楽再生
+        danceAudio = new Audio('sound/h_lemon.mp3');
+        danceAudio.play();
+
+        // ゴースト生成とダンス開始
+        if (typeof createDanceGhosts === "function") {
+            createDanceGhosts();
+            await startHoneyLemonSequence(); 
+        }
+        return; // ここで終了
+    }
+
+    // --- 通常時、および1〜5手のご褒美演出 ---[cite: 1]
     panelState.forEach((num, index) => {
         const targetId = `#p${index + 1}`;
-        
-        // 1. スタイルのリセット（ただし背景色以外）
-        // clearProps: "all" を使うと色も消えるので、特定のプロパティに絞ります
         gsap.set(targetId, { clearProps: "transform,scale,background-image" });
 
         if (mode === "win") {
-            const steps = Math.max(1, selectedSteps);
             let imgFile = null;
             let shouldAnimate = false;
 
-            // --- A. 画像の選定ロジック（法則性の適用） ---
             if (steps === 1) {
-                // 1手：変化なし
-            } 
-            else if (steps === 2) {
-                // 2手：ランダムに選ばれた3つだけ変化（動きなし）
+                // 1手：変化なし[cite: 1]
+            } else if (steps === 2) {
                 if (specialThree.includes(num)) {
-                    // _1 か _2 をランダムで選んで法則の変化を見せる
                     let type = Math.random() < 0.5 ? "_1" : "_2";
                     imgFile = `conum${num}${type}.png`;
                 }
-            } 
-            else if (steps === 3) {
-                // 3手：全員変化（動きなし）
-                // _1か_2かを固定せず、あえてバラつかせて法則のセット感を見せる
+            } else if (steps === 3) {
                 let type = Math.random() < 0.5 ? "_1" : "_2";
                 imgFile = `conum${num}${type}.png`;
-            } 
-            else {
-                // 4手以上：全員変化 ＋ 動きあり
+            } else if (steps <= 5) {
+                // 4手・5手：全員変化 ＋ 動きあり[cite: 1]
                 let type = Math.random() < 0.5 ? "_1" : "_2";
                 imgFile = `conum${num}${type}.png`;
                 shouldAnimate = true;
             }
 
-            // --- B. 描画の実行 ---
             if (imgFile) {
                 const rect = $(targetId)[0].getBoundingClientRect();
                 const $chara = $(`<img src="img/${imgFile}" class="celebrate-chara">`).css({
@@ -143,55 +828,39 @@ function refreshPanelsExt(mode = "normal") {
                     pointerEvents: 'none'
                 });
                 $('body').append($chara);
-
-                // 【ここがポイント！】背景画像を none にしても、
-                // CSSの背景色はそのまま残るので「薄い色」は消えません。
                 $(targetId).css('background-image', 'none');
 
-   if (shouldAnimate) {
-    // 4手: power=1, 5手: power=2, 6手: power=3
-    const power = steps - 3;
-    
-    // 【調整】2乗をやめ、ベース数値を固定してマイルドに加算
-    // 4手: -20, 5手: -40, 6手: -60 程度の安定した跳躍
-    const jumpY = -20 * power; 
-    const jumpX = 15 * power;
-    
-    // 回転も「激しすぎない」程度に
-    const rotDeg = 8 * power;
+                if (shouldAnimate) {
+                    const power = steps - 3; // 4手:1, 5手:2[cite: 1]
+                    const jumpY = -20 * power; 
+                    const jumpX = 15 * power;
+                    const rotDeg = 8 * power;
+                    const startDir = (index % 2 === 0) ? 1 : -1;
+                    const dur = 1.4 - (power * 0.2); 
 
-    const startDir = (index % 2 === 0) ? 1 : -1;
-    
-    // 【調整】早すぎないように duration の下限を設定
-    // 4手: 1.2s, 5手: 1.0s, 6手: 0.8s くらいで、しっかり「往復」を見せる
-    const dur = 1.4 - (power * 0.2); 
-
-    const anim = gsap.to($chara, {
-        keyframes: {
-            "0%":   { x: 0, y: 0, rotation: 0 },
-            "25%":  { x: jumpX * startDir, y: jumpY, rotation: rotDeg * startDir, ease: "sine.out" },
-            "50%":  { x: 0, y: 0, rotation: 0, ease: "sine.in" },
-            "75%":  { x: -jumpX * startDir, y: jumpY, rotation: -rotDeg * startDir, ease: "sine.out" },
-            "100%": { x: 0, y: 0, rotation: 0, ease: "sine.in" }
-        },
-        duration: dur,
-        delay: index * 0.05,
-        repeat: -1,
-        ease: "none"
-    });
-
-    winAnims.push(anim);
-}
+                    const anim = gsap.to($chara, {
+                        keyframes: {
+                            "0%":   { x: 0, y: 0, rotation: 0 },
+                            "25%":  { x: jumpX * startDir, y: jumpY, rotation: rotDeg * startDir, ease: "sine.out" },
+                            "50%":  { x: 0, y: 0, rotation: 0, ease: "sine.in" },
+                            "75%":  { x: -jumpX * startDir, y: jumpY, rotation: -rotDeg * startDir, ease: "sine.out" },
+                            "100%": { x: 0, y: 0, rotation: 0, ease: "sine.in" }
+                        },
+                        duration: dur,
+                        delay: index * 0.05,
+                        repeat: -1,
+                        ease: "none"
+                    });
+                    winAnims.push(anim);
+                }
             } else {
                 refreshSinglePanel(index, false);
             }
         } else {
-            // 通常時
             refreshSinglePanel(index, false);
         }
     });
 }
-
   function playSnd(type, force = false) {
         if (!force && isAnimating && type === 'push') return; 
         if (!isSoundOn) return;
@@ -684,11 +1353,20 @@ window.switchHowToLang = function(lang) {
     // --- イベント登録 ---
 
 $('#how-to-btn').click(function() {
+	if (isDancing) {
+        abortDance();
+    }
+	if (isAnimating) return;
+	
     playSnd('click');
     openHowToModal();
 });
 
     $('.bot').click(function() {
+	if (isDancing) {
+        abortDance();
+    }
+
         if (isAnimating) return;
         playSnd('click');
         const id = $(this).attr("id");
@@ -743,6 +1421,9 @@ $('#how-to-btn').click(function() {
     });
 
     $("#input-mode").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
@@ -758,6 +1439,9 @@ $('#how-to-btn').click(function() {
     });
 
     $("#tebo").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
 
@@ -780,6 +1464,9 @@ $('#how-to-btn').click(function() {
     });
 
     $("#sebo").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
 
@@ -817,6 +1504,9 @@ $('#how-to-btn').click(function() {
     });
 
     $("#resebo").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (isAnimating || isChallengeMode) return;
 	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
@@ -835,12 +1525,18 @@ $('#how-to-btn').click(function() {
     });
 
     $(".sys-sound").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         isSoundOn = !isSoundOn;
         $(this).css("opacity", isSoundOn ? "1.0" : "0.5");
         if(isSoundOn) playSnd('click');
     });
 
     $("#peek-btn").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (currentAnswer.length === 0 || isAnimating) return;
         $(this).text(`FIRST: ${currentAnswer[0]}`);
         clearTimeout(peekTimer);
@@ -848,6 +1544,9 @@ $('#how-to-btn').click(function() {
     });
 
     $("#kotae").on("click", function() {
+	if (isDancing) {
+        abortDance();
+    }
         if (currentAnswer.length === 0 || isAnimating) return;
         $(this).text(currentAnswer.join(" - "));
         setTimeout(() => { $(this).text("Forbidden fruit"); }, 3000);
