@@ -121,6 +121,7 @@ function abortDance() {
 
 function clearAllDanceEffects() {
     console.log("Cleaning up the stage...");
+	updateHyouji("✨ HOME ✨", "success");
 
     // 1. 数字（ゴースト）の消去
     if (typeof $allGhosts !== 'undefined') {
