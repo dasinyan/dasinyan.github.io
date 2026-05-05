@@ -1,7 +1,7 @@
 // ==========================================
 // 1. 変数・定数定義
 // ==========================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycby3IYeuqZg56I100PiEuc5JGg1Uy3EfxBReYawxw6ufP3avsGvc4gSAxPNjXOoddjXe/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzfITxWEanzZSxhHnTsv9DUrkhHnJ91Tj8gDGYSaWY4ZrqgYRYhJHirQT7_MKIAUCzf/exec";
 
 var n1, n2, n3, n4, n5, n6, n7, n8, n9;
 var sn1, sn2, sn3, sn4, sn5, sn6, sn7, sn8, sn9, stes;
@@ -277,7 +277,7 @@ function hantei(showCelebration) {
 async function setDailyChallenge(steps) {
     set0(false); 
     try {
-        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}&dayOffset=0&userId=${userId}`;
+        const url = `${GAS_URL}?action=getDailySeed&steps=${steps}&dayOffset=0&userId=${userId}&appType=STD`;
         const response = await fetch(url);
         const data = await response.json();
         let seed = data.seed; 
@@ -291,7 +291,7 @@ async function setDailyChallenge(steps) {
 }
 
 async function handleRanking(clearTime) {
-    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime) });
+    await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime),appType: "STD" });
     setTimeout(() => { changeRankDay(0); }, 600);
 }
 
@@ -332,7 +332,7 @@ async function showGlobalRank(steps, dayOffset = 0) {
     }
 
     try {
-        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${currentDayOffset}&userId=${userId}`;
+        const url = `${GAS_URL}?action=getRanking&mode=${steps}&dayOffset=${currentDayOffset}&userId=${userId}&appType=STD`;
         const response = await fetch(url);
         const data = await response.json();
         let listHtml = "";
