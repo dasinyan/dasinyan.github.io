@@ -3135,14 +3135,14 @@ function displayTutorialArrows(clickedIdx) {
 
         // body直下に絶対配置で浮かせる<img>を生成
         const $arrow = $("<img>", {
-            src: "IMG/yajirusi.png", // 透過矢印画像
+            src: "img/yajirusi.png", // 透過矢印画像
             class: "tutorial-arrow", // 消去時のセレクタ用クラス
             css: {
                 position: "absolute",
                 // 🌟 【サイズ変更】元の画像の幅を3分の1（約33%）に制限します
                 // ※もしこれでも大きすぎる場合は、"24px" や "30px" のように固定ピクセル指定も可能です
-                width: "80%", 
-                maxWidth: "80px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
+                width: "60%", 
+                maxWidth: "60px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
 //width: "clamp(36px, 11vw, 62px)",
 
 
@@ -3869,7 +3869,9 @@ $(".lang-btn").on("click", function() {
 
 	// 🌟 【ここを追加！】チュートリアルの矢印実験フラグが立っている場合
     if (isArrowExperimentMode) {
-        clearTutorialArrows();       // ３．まず古い矢印を消す
+	
+        clearTutorialArrows(); 
+	playSnd('click');     // ３．まず古い矢印を消す
         displayTutorialArrows(idx);   // ４．タッチされたインデックス(0~8)に応じた場所に矢印を表示する
         return;                      // 💡 ここで処理を終了し、以下の通常移動（COMBO/SINGLE）を完全にスキップ！
     }
