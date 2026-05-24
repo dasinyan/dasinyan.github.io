@@ -1797,7 +1797,7 @@ const hintData = [
         target: "#p8",
         message: {
             ja: "なんかもっとズバッと<br>こいつが怪しい！ってのは無いのか？",
-            en: "Isn't there a quicker way, like,<br>The panel you tap stays still."
+            en: "Isn't there a quicker way, like,<br>\"Yeah, this is the shady one!\"?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -3141,13 +3141,17 @@ function displayTutorialArrows(clickedIdx) {
                 position: "absolute",
                 // 🌟 【サイズ変更】元の画像の幅を3分の1（約33%）に制限します
                 // ※もしこれでも大きすぎる場合は、"24px" や "30px" のように固定ピクセル指定も可能です
-                width: "45%", 
-                maxWidth: "45px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
+                width: "60%", 
+                maxWidth: "60px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
+//width: "clamp(36px, 11vw, 62px)",
+
 
                 // グリッドの左上座標を基準に、計算された相対座標を足す
                 left: (gridOffset.left + coords.x) + "px",
                 top: (gridOffset.top + coords.y) + "px",
-                
+
+// left: pos.x + "%",
+// top:  pos.y + "%",               
                 // 🌟 画像自体の中心（50% 50%）を基準にして、その場で回転させる
                 transform: "translate(-50%, -50%) rotate(" + cfg.angle + "deg)",
                 transformOrigin: "center center",
