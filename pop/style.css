@@ -323,5 +323,33 @@ body {
     display: flex; align-items: center; justify-content: center;
     font-size: 30px;
 }
+
+
 .help-text-ja { font-size: 14px; font-weight: bold; color: #333; margin-top: 10px; }
 .help-text-en { font-size: 12px; color: #888; margin-bottom: 10px; font-style: italic; }
+
+/* style.css に追加 */
+#tutorial-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none; /* 最初は隠す */
+    z-index: 30000;
+    justify-content: center;
+    align-items: center;
+}
+
+.lang-select-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 25px;
+    text-align: center;
+    width: 280px;
+}
+
+/* 言語選択ボタンも既存の .bot スタイルを適用 */
+.lang-btn {
+    width: 100%;
+    margin: 10px 0;
+}

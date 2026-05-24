@@ -31,6 +31,164 @@ $(function() {
     let currentDayOffset = 0; 
 	let isLocked = false; // クリア後の演出用ロック
 	let winAnims = []; // 祝福アニメーションを保持する配列
+
+// 各モードの計測が走っているか管理するフラグ
+let isTimerActive = { 3: false, 4: false };
+
+// --- 1. 状態管理に「チュートリアルの種類」を追加 ---
+let tutorialType = "basic"; // "basic"（初回用） か "hint"（ヒント用） か
+
+let isArrowExperimentMode = false; // 矢印実験フラグ（初期値はオフ）
+
+// --- 2. 16箇所の座標（位置番号）の自動計算設定 ---
+const PANEL_SIZE = 100; // パネルの幅・高さ
+const GAP = 10;        // gridの隙間
+
+// 各行・列の中心座標（0, 1, 2番目）
+const gridPos = [
+    (PANEL_SIZE / 2),                           // 50px
+    (PANEL_SIZE + GAP + PANEL_SIZE / 2),        // 160px
+    (PANEL_SIZE * 2 + GAP * 2 + PANEL_SIZE / 2)   // 270px
+];
+
+// 各隙間の中心座標
+const gapPos = [
+    (PANEL_SIZE + GAP / 2),                     // 105px（1つ目の隙間）
+    (PANEL_SIZE * 2 + GAP + GAP / 2)            // 215px（2つ目の隙間）
+];
+
+// 🌟 あなたの設計通り、完全に16箇所で完結するマスター配列
+const ARROW_POSITIONS = [
+    // --- 縦・横の直線的な隙間（12箇所：0 〜 11） ---
+    /* 0 */  { x: gapPos[0], y: gridPos[0] }, // 1行目・左の隙間
+    /* 1 */  { x: gapPos[1], y: gridPos[0] }, // 1行目・右の隙間
+    /* 2 */  { x: gapPos[0], y: gridPos[1] }, // 2行目・左の隙間
+    /* 3 */  { x: gapPos[1], y: gridPos[1] }, // 2行目・右の隙間
+    /* 4 */  { x: gapPos[0], y: gridPos[2] }, // 3行目・左の隙間
+    /* 5 */  { x: gapPos[1], y: gridPos[2] }, // 3行目・右の隙間
+    
+    /* 6 */  { x: gridPos[0], y: gapPos[0] }, // 1列目・上の隙間
+    /* 7 */  { x: gridPos[0], y: gapPos[1] }, // 1列目・下の隙間
+    /* 8 */  { x: gridPos[1], y: gapPos[0] }, // 2列目・上の隙間
+    /* 9 */  { x: gridPos[1], y: gapPos[1] }, // 2列目・下の隙間
+    /* 10 */ { x: gridPos[2], y: gapPos[0] }, // 3列目・上の隙間
+    /* 11 */ { x: gridPos[2], y: gapPos[1] }, // 3列目・下の隙間
+
+    // --- 四隅と中央を繋ぐ斜めの隙間（4箇所：12 〜 15） ---
+    /* 12 */ { x: (gridPos[0] + gridPos[1]) / 2, y: (gridPos[0] + gridPos[1]) / 2 }, // 左上と中央の間 (105px, 105px)
+    /* 13 */ { x: (gridPos[2] + gridPos[1]) / 2, y: (gridPos[0] + gridPos[1]) / 2 }, // 右上と中央の間 (165px, 105px)
+    /* 14 */ { x: (gridPos[0] + gridPos[1]) / 2, y: (gridPos[2] + gridPos[1]) / 2 }, // 左下と中央の間 (105px, 165px)
+    /* 15 */ { x: (gridPos[2] + gridPos[1]) / 2, y: (gridPos[2] + gridPos[1]) / 2 }  // 右下と中央の間 (165px, 165px)
+];
+const TUTORIAL_ARROW_MAP = {
+    // 🟥 0: 左上パネルがタップされた時（5の場所から1の場所へ斜めに脱出！）
+    0: [
+        { posIdx: 8,  angle: 0 }, // 中央上から真ん中へ（下向き）
+        { posIdx: 7,  angle: 0 }, // 🌟 5から1の場所へ（左上斜め向き）
+        { posIdx: 2,  angle: 90 }, // 左中央から左下へ（下向き）
+        { posIdx: 4,  angle: 270 }, // 下中央から左下へ（左向き）
+        { posIdx: 5,  angle: 270 }, // 右下から下中央へ（左向き）
+        { posIdx: 11, angle: 180 },   // 右下から右中央へ（上向き）
+        { posIdx: 10, angle: 180 },   // 右中央から右上へ（上向き）
+        { posIdx: 1,  angle: 90 }  // 右上から中央上へ（左向き）
+    ],
+
+    // 🟦 1: 上中央パネルがタップされた時（7の場所から5の場所へ斜めに入る！）
+    1: [
+        { posIdx: 7,  angle: 0 }, // 中央上から左上へ（左向き）
+        { posIdx: 6,  angle: 0 },   // 左中央から左上へ（上向き）
+        { posIdx: 12, angle: 135 },   // 真ん中から中央上へ（上向き）
+        { posIdx: 13, angle: 45 },  // 中央上から右上へ（右向き）
+        { posIdx: 10, angle: 180 }, // 右上から右中央へ（下向き）
+        { posIdx: 11, angle: 180 }, // 右中央から右下へ（下向き）
+        { posIdx: 5,  angle: 270 }, // 右下から下中央へ（左向き）
+        { posIdx: 4,  angle: 270 }    // 🌟 左下から真ん中へ（右上斜め向き）
+    ],
+
+    // 🟥 2: 右上パネルがタップされた時（5の場所から3の場所へ斜めに脱出！）
+    2: [
+        { posIdx: 0,  angle: 90 },  // 左上から中央上へ（右向き）
+        { posIdx: 8,  angle: 180 },  // 🌟 5から3の場所へ（右上斜め向き）
+        { posIdx: 3,  angle: 90 }, // 右中央から右下へ（下向き）
+        { posIdx: 11, angle: 180 }, // 右下から下中央へ（左向き）
+        { posIdx: 5,  angle: 270 }, // 下中央から左下へ（左向き）
+        { posIdx: 4,  angle: 270 },   // 左下から左中央へ（上向き）
+        { posIdx: 7,  angle: 0 },   // 左中央から左上へ（上向き）
+        { posIdx: 6,  angle: 0 }   // 左中央から真ん中へ（右向き）
+    ],
+
+    // 🟦 3: 左中央パネルがタップされた時（5から1の場所へ斜めに脱出！）
+    3: [
+        { posIdx: 0,  angle: 90 },  // 左上から中央上へ（右向き）
+        { posIdx: 1,  angle: 90 },  // 中央上から右上へ（右向き）
+        { posIdx: 10, angle: 180 }, // 右上から右中央へ（下向き）
+        { posIdx: 11, angle: 180 }, // 右中央から真ん中へ（下向き）
+        { posIdx: 5,  angle: 270 }, // 左中央から左下へ（下向き）
+        { posIdx: 4,  angle: 270 },  // 左下から下中央へ（右向き）
+        { posIdx: 14, angle: 45 },   // 下中央から真ん中へ（上向き）
+        { posIdx: 12, angle: 315 }  // 🌟 5から1の場所へ（左上斜め向き）
+    ],
+
+    // 🟩 4: 中央パネルがタップされた時（綺麗な外周正方形サイクル）
+    4: [
+        { posIdx: 0,  angle: 90 },  // 1→2（右向き）
+        { posIdx: 1,  angle: 90 },  // 2→3（右向き）
+        { posIdx: 10, angle: 180 }, // 3→6（下向き）
+        { posIdx: 11, angle: 180 }, // 6→9（下向き）
+        { posIdx: 5,  angle: 270 }, // 9→8（左向き）
+        { posIdx: 4,  angle: 270 }, // 8→7（左向き）
+        { posIdx: 7,  angle: 0 },   // 7→4（上向き）
+        { posIdx: 6,  angle: 0 }    // 4→1（上向き）
+    ],
+
+    // 🟦 5: 右中央パネルがタップされた時（5から3の場所へ斜めに脱出！）
+    5: [
+        { posIdx: 1,  angle: 90 },   // 左中央から真ん中へ（上向き）
+        { posIdx: 13, angle: 225 },  // 🌟 5から3の場所へ（右上斜め向き）
+        { posIdx: 15, angle: 135 }, // 右中央から右下へ（下向き）
+        { posIdx: 5,  angle: 270 }, // 右下から下中央へ（左向き）
+        { posIdx: 4,  angle: 270 }, // 下中央から左下へ（左向き）
+        { posIdx: 7,  angle: 0 },   // 左下から左中央へ（上向き）
+        { posIdx: 6,  angle: 0 },   // 左中央から左上へ（上向き）
+        { posIdx: 0,  angle: 90 }   // 左上から中央上へ（右向き）
+    ],
+
+    // 🟥 6: 左下パネルがタップされた時（5から7の場所へ斜めに脱出！）
+    6: [
+        { posIdx: 0,  angle: 90 },  // 左上から中央上へ（右向き）
+        { posIdx: 1,  angle: 90 },  // 中央上から右上へ（右向き）
+        { posIdx: 10, angle: 180 }, // 右上から右中央へ（下向き）
+        { posIdx: 11, angle: 180 }, // 右中央から真ん中へ（左向き）
+        { posIdx: 5,  angle: 270 }, // 🌟 5から7の場所へ（左下斜め向き）
+        { posIdx: 9,  angle: 0 },  // 左下から下中央へ（右向き）
+        { posIdx: 2,  angle: 270 },   // 右下から右中央へ（上向き）
+        { posIdx: 6,  angle: 0 }    // 下中央から真ん中へ（上向き）
+    ],
+
+    // 🟦 7: 下中央パネルがタップされた時（1から5の場所へ斜めに入る！）
+    7: [
+        { posIdx: 10, angle: 180 },  // 左下から下中央へ（右向き）
+        { posIdx: 11, angle: 180 }, // 真ん中から下中央へ（下向き）
+        { posIdx: 15, angle: 315 }, // 右下から下中央へ（左向き）
+        { posIdx: 14, angle: 225 },   // 右下から右中央へ（上向き）
+        { posIdx: 7,  angle: 0 },   // 右中央から右上へ（上向き）
+        { posIdx: 6,  angle: 0 }, // 右上から中央上へ（左向き）
+        { posIdx: 0,  angle: 90 }, // 中央上から左上へ（左向き）
+        { posIdx: 1,  angle: 90 }  // 🌟 左上から真ん中へ（右下斜め向き）
+    ],
+
+    // 🟥 8: 右下パネルがタップされた時（5から9の場所へ斜めに脱出！）
+    8: [
+        { posIdx: 6,  angle: 0 },  // 左上から中央上へ（右向き）
+        { posIdx: 0,  angle: 90 },   // 真ん中から中央上へ（上向き）
+        { posIdx: 1,  angle: 90 },  // 中央上から右上へ（右向き）
+        { posIdx: 10, angle: 180 }, // 右上から右中央へ（下向き）
+        { posIdx: 3, angle: 270 }, // 🌟 5から9の場所へ（右下斜め向き）
+        { posIdx: 9,  angle: 180 }, // 右下から下中央へ（左向き）
+        { posIdx: 4,  angle: 270 }, // 下中央から左下へ（左向き）
+        { posIdx: 7,  angle: 0 }    // 左下から左中央へ（上向き）
+    ]
+};
 	
 // 他のフラグ（isLocked など）の近くに配置します
 let isDancing = false; 
@@ -65,6 +223,2109 @@ let danceGhosts = [];
 
 // 関数の外（ファイルの上のほう）で宣言だけしておく
 let danceAudio = null;
+
+let currentLang = 'en';
+
+// --- チュートリアル用のデータ管理 ---
+    let tutorialStep = 0; // 現在どのステップか (0番目からスタート)
+
+// 進行管理用のフラグ
+let hasPressedTarget = false;
+
+const tutorialData = [
+   　　 { 
+        target: "#p1",
+        message: {
+            ja: "Cyclogic Pop の世界にようこそ！<br>僕が遊び方を紹介するね",
+            en: "Welcome to Cyclogic Pop!<br>Let me show you how to play!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },    
+	{ 
+        target: "#p5",
+        message: {
+            ja: "僕たちを好きに押してみてくれるかな<br>それに合わせて、みんなが飛び回るよ",
+            en: "Go ahead and tap any of us!<br>Everyone will start flying around!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"]
+    },
+		{ 
+        target: "#p5",
+        message: {
+            ja: "自由に飛んでるように見えるけど<br>実は移動にはルールがあるんだ<br>解るかな？",
+            en: "We might look like we're flying free,<br>but we actually follow a specific rule.<br>Can you figure it out?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"]
+    },
+		{ 
+        target: "#p5",
+        message: {
+            ja: "押された数字は動かない！<br>他のみんなが時計回りに<br>一つとなりのマスに動くんだ",
+            en: "The number you tap stays still!<br>Everyone else moves clockwise<br>to the very next space."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "ちょっとみんな説明中だから<br>飛ばないでじっとしてて・・・",
+            en: "Whoa, hold on everyone!<br>I'm trying to explain!<br>No jumping yet, just stay right there..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"]
+    },
+
+		{ 
+        target: "#p5",
+        message: {
+            ja: "やっと止まったくれた<br>みんな！ありがとね！",
+            en: "Finally, they stopped moving...<br>Thanks, everyone!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+
+	// 🌟 ステップ開始時にフラグを立てる
+    onStepStart: function() {
+        isArrowExperimentMode = true;
+    }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "数字を押すと矢印が見えるでしょ<br>押された数字は動かずに<br>他のみんなが矢印の向きに跳んでいくんだ",
+            en: "See the arrows when you tap a number?<br>The number you tapped stays in place,<br>and everyone else jumps in that direction!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+
+	// 🌟 ステップ開始時にフラグを立てる
+    onStepStart: function() {
+        isArrowExperimentMode = true;
+    }
+    },
+	
+{ 
+        target: "#p5",
+        message: {
+            ja: "みんなが止まってくれてる間に<br>解るまで押してみてね",
+            en: "While everyone is staying still,<br>keep tapping until you get how it works!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+
+	// 🌟 ステップ開始時にフラグを立てる
+    onStepStart: function() {
+        isArrowExperimentMode = true;
+    }
+    },
+
+	{ 
+        target: "#p5",
+        message: {
+            ja: "解ってくれたかな？<br>何回か押して確認してみて<br>OKなら話を進めるよ",
+            en: "Do you get it now?<br>Tap a few more times to be sure.<br>Ready to move on?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"],
+	// 🌟 次のステップ開始時（＝前のステップが進行した時）にフラグを折り、矢印を消す
+        onStepStart: function() {
+        isArrowExperimentMode = false;
+        clearTutorialArrows(); // 矢印を消す関数を呼ぶ
+        },
+	check: function() {
+          if (!hasPressedTarget) {
+         
+              return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+
+		{ 
+        target: "#tebo",
+        message: {
+            ja: "このボタンが「０」の時に",
+            en: "When this button shows \"0\"..."
+        },
+        pos: { x: 0, y:600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+		{ 
+        target: "#sebo",
+        message: {
+            ja: "このSETボタンを押してみて<br>僕たちが整列したでしょ",
+            en: "Give this SET button a push!<br>Look, we're all lined up now!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#sebo"],
+	check: function() {
+          if (!hasPressedTarget) {
+         
+              return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+		{ 
+        target: "#p2",
+        message: {
+            ja: "このプッシュホンと同じ数字の配置を<br>僕たちは「HOME」と呼んでるんだ",
+            en: "We call this keypad layout our \"HOME\"!<br>It's just like an old office phone."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+		{ 
+        target: "#p5",
+        message: {
+            ja: "パズルの目的は僕たちを動かして<br>みんなでHOMEを目指すことだよ",
+            en: "The goal is to move all of us<br>so we can get BACK TO HOME together!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "このボタンを押すと<br>表示されてる数字が<br>０～６で入れ替わるよ",
+            en: "Press this button<br>to swap the numbers<br>from 0 to 6!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#tebo"]	   
+    },
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "ボタンを何度か押して<br>数字を「１」にしよう",
+            en: "Keep pressing it<br>until you get the number 1!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#tebo"],
+	check: function() {
+        // #teboのテキストを数字に変換して、1と一致するか判定
+        return parseInt($("#tebo").text()) === 1;
+	}
+    },
+	{ 
+        target: "#sebo",
+        message: {
+            ja: "隣のボタンが「１」の時に<br>SETを押すと・・・",
+            en: "When the next button<br>shows \"1\", try pressing<br>the SET button..."
+        },
+        pos: { x: 0, y:600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#sebo"],
+	
+        check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+      	
+    },
+	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "僕たちの配置があと１回押せば<br>HOMEに辿り着く配置になるんだ",
+            en: "Just one more press<br>will put our layout<br>right into HOME!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "何度かSETを押して観察してみて",
+            en: "Press SET a few times<br>and watch closely<br>to see what happens!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#sebo"],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "気が付いたかもしれないけど<br>僕たちが自分のHOMEにいると<br>マスが体と同じ色になるよ",
+            en: "You might have noticed,<br>when we are in our HOME,<br>the slots match our color!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#sebo"]
+    },
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "この数字は難易度で<br>あと何回押せばHOMEに辿り着けるかを<br>表してるよ",
+            en: "This difficulty number<br>shows how many presses<br>are left to reach HOME!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#sebo",
+        message: {
+            ja: "SETを押すと<br>「となりの数字の回数押せばHOME」<br>って配置が表示される",
+            en: "Press SET, and it shows<br>the layout to reach HOME<br>in \"next number\" moves!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "ここに表示されてる数字<br>つまり回数をヒントにして・・・",
+            en: "Use this number here<br>as your count hint,<br>and then..."
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#sebo",
+        message: {
+            ja: "SETを押して現れた配置から<br>HOMEを目指すパズルだよ",
+            en: "Just clear the puzzle<br>by reaching HOME from<br>the layout that appears!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#input-mode",
+        message: {
+            ja: "これは入力の仕方を変えるボタンで<br>押すとSINGLEとCOMBOが選べるよ",
+            en: "This button changes<br>the input mode to select<br>SINGLE or COMBO!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"]
+    },
+	{ 
+        target: "#input-mode",
+        message: {
+            ja: "SINGLEは数字を押すたび<br>他の数字たちが動くんだ",
+            en: "In SINGLE, every press<br>makes all the other<br>numbers move around!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"]
+    },
+	{ 
+        target: "#input-mode",
+        message: {
+            ja: "毎回動くから動きに慣れるまでは<br>SINGLEがおすすめだね",
+            en: "They move every time,<br>so I recommend SINGLE<br>until you get used to it!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"]
+    },
+
+	{ 
+        target: "#input-mode",
+        message: {
+            ja: "COMBOは全ての答えの入力が終わるまで<br>僕らはじっと待っていて<br>全て入力されたら一気に動くよ",
+            en: "In COMBO, we wait quietly<br>until you finish entering,<br>then move all at once!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"]
+    },
+　　　　{ 
+        target: "#input-mode",
+        message: {
+            ja: "試しにCOMBOにしてみて",
+            en: "Give it a try and<br>switch the mode to COMBO!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"],
+	check: function() {
+        // テキストをトリミング（前後の空白削除）して比較
+        return $("#input-mode").text().trim() === "COMBO";
+    }
+
+    },
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "ここを「５」にしてみて",
+            en: "Let\'s try setting<br>this one to \"5\"!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#tebo"],
+	check: function() {
+        // #teboのテキストを数字に変換して、1と一致するか判定
+        return parseInt($("#tebo").text()) === 5;
+	}
+    },
+	{ 
+        target: "#p2",
+        message: {
+            ja: "-----の部分に数字が溜まっていくんだ",
+            en: "The numbers will pile up<br>right here in the<br>----- section!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 130,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#sebo",
+        message: {
+            ja: "SETを押してみよう",
+            en: "Let\'s try pressing<br>the SET button!"
+        },
+        pos: { x: 0, y:600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#sebo"],
+	
+        check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+      	
+    },
+
+	{ 
+        target: "#p5",
+        message: {
+            ja: "ちょっと難しいから<br>なんでもいいから数字を５回<br>試しに押してみよう",
+            en: "It might look tricky, so<br>just press any numbers<br>5 times to try it out!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [".panel"]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "基本的な操作方法は判ってくれたかな<br>難易度は一つ上がるだけで<br>大きく難しくなるから<br>１から徐々に上げていこう",
+            en: "Got the basic controls?<br>It gets way harder with<br>just +1 difficulty, so let\'s<br>start slow from \"1\"!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "だんだん解けるようになって<br>COMBOの３，４が解けるようになったら<br>ディリーチャレンジに挑戦しよう",
+            en: "Once you can solve<br>COMBO level 3 or 4,<br>try the Daily Challenge!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#mode-select",
+        message: {
+            ja: "このボタンでMODE3とMODE4を<br>切り替えることが出来て<br>MODE3が３回でHOME<br>MODE4が４回でHOME<br>COMBO入力の問題が・・・",
+            en: "Switch between MODE3<br>and MODE4 here.<br>MODE3 is 3 moves to HOME,<br>MODE4 is 4 moves to HOME,<br>and COMBO questions..."
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#mode-select"]
+    },
+	{ 
+        target: "#challenge-start",
+        message: {
+            ja: "STARTを押すと始まるよ",
+            en: "Press START to begin!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	
+	{ 
+        target: "#mode-select",
+        message: {
+            ja: "MODE3を選んでみよう",
+            en: "Let's try and choose MODE3!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#mode-select"],
+	check: function() {
+        // テキストをトリミング（前後の空白削除）して比較
+        return $("#mode-select").text().trim() === "MODE 3";
+        }
+
+    },
+	{ 
+        target: "#challenge-start",
+        message: {
+            ja: "STARTを押してみよう",
+            en: "Let's press START!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#challenge-start"],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "君にはこれが解けるかな？<br>この問題で世界中のプレイヤーと<br>クリアタイムを競えるんだ",
+            en: "Can you solve this?<br>Compete with players<br>all over the world<br>for the best time!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#rank",
+        message: {
+            ja: "RANKを押すと<br>MODE3,MODE4に対応した<br>ランキングが見られるから<br>気になったらチェックしてみてね",
+            en: "Press RANK to see<br>the leaderboards<br>for MODE3 and 4.<br>Check it out anytime!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	
+
+    },
+	{ 
+        target: "#input-mode",
+        message: {
+            ja: "COMBOを選んで・・・",
+            en: "Select COMBO and..."
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"],
+	check: function() {
+        // テキストをトリミング（前後の空白削除）して比較
+        return $("#input-mode").text().trim() === "COMBO";
+   　　 }
+},
+
+	{ 
+        target: "#tebo",
+        message: {
+            ja: "ここを６にして・・・",
+            en: "Set this to 6 and..."
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#tebo"],
+	check: function() {
+        // #teboのテキストを数字に変換して、1と一致するか判定
+        return parseInt($("#tebo").text()) === 6;
+	}
+    },
+	{ 
+        target: "#sebo",
+        message: {
+            ja: "SETを押してみて",
+            en: "Try pressing SET!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#sebo"],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+　　 },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "６回でHOMEのCOMBO入力<br>もしもこれがクリア出来たら<br>僕たちが特別なダンスを披露するね",
+            en: "A 6-step HOME COMBO!<br>If you can clear this,<br>we'll perform<br>a special dance for you!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#peek-btn",
+        message: {
+            ja: "一応説明するけど<br>行き詰ったらPEEK（のぞき見）を押すと<br>こっそり一つ目の答えを教えてあげる",
+            en: "Just so you know,<br>if you get stuck, <br>press PEEK and I'll<br>secretly give you<br>the first answer!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#peek-btn"]
+    },
+	{ 
+        target: "#peek-btn",
+        message: {
+            ja: "下の方にある<br>FORBIDDEN FRUIT<br>（禁断の果実）<br>ご利用は自己責任でね",
+            en: "Look down below for<br>FORBIDDEN FRUIT...<br>Use it at your own risk!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "長い説明になったけど<br>聞いてくれてありがとう",
+            en: "Thanks for listening<br>to my long explanation!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "僕たち、見た目はこんな風だけど<br>パズルはけっこう難しいよ",
+            en: "We might look cute,<br>but these puzzles are pretty tough!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+　　　　{ 
+        target: "#p1",
+        message: {
+            ja: "ちょっと難しいって思ったら<br>下の方の「NUMBERS WHISPER」で<br>数字たちの内緒話が聞けるよ",
+            en: "If it feels too hard,<br>check out the\"NUMBERS WHISPER\"<br>down below!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "パズルに役立つ話が<br>聞けるかもしれないね",
+            en: "You can listen to our secret chat.<br>It might help you solve the puzzle!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },	
+	{ 
+        target: "#p1",
+        message: {
+            ja: "いっぱい遊んでくれたらうれしいな<br>じゃあパズルの中で待ってるね",
+            en: "I hope you have lots of fun playing!<br>See you inside the puzzle!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	
+
+// ... 続く
+];
+
+
+
+const hintData = [
+    { 
+        target: "#p9",
+        message: {
+            ja: "おや！見ない顔だね<br>君が「１」が話してた<br>新しい友だちかな",
+            en: "Oh, hello there! A new face.<br>Are you the new friend<br>that \"1\"' was telling me about?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    
+	{ 
+        target: "#p9",
+        message: {
+            ja: "私はこのパズルを研究している<br>見ての通りの「９」だよ",
+            en: "I'm \"9\", as you can see,<br>and I spend my time<br>studying this puzzle."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+		{ 
+        target: "#p9",
+        message: {
+            ja: "解き方で困ってるなら<br>私の話を聞いていけばいい<br>今よりずっと解けるようになるよ",
+            en: "If you're stuck on a puzzle,<br>just listen to what I have to say.<br>You'll get much better at this!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "まずは初歩から始めよう",
+            en: "Let's start<br>with the basics first."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "これはあと１回押すとHOMEって配置",
+            en: "In this layout, one more tap<br>will send it right HOME."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 3, 6, 5, 2, 9, 4, 7, 8]
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "これもあと１回押すとHOMEって配置",
+            en: "Also, in this layout, one more tap<br>will send it right HOME too."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 5, 9, 4, 7, 8]
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "これも一緒だよ<br>何かに気が付いた？",
+            en: "This one is no different.<br>Notice anything yet?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 8, 5, 4, 7, 9]
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "私たちがHOMEにいると<br>マスが体と同じ色になるんだけど<br>誰か一人だけHOMEにいるでしょ",
+            en: "When we are HOME,<br>the tile changes to our body color.<br>See? Just one of us is HOME right now."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 8, 5, 4, 7, 9]
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "押された数字は動かない！<br>私たちのルール覚えてるかい？<br>あと一回押してHOMEってことは・・・",
+            en: "The number you tap won't move!<br>Remember our golden rule?<br>So, if it goes HOME in one more tap..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 8, 5, 4, 7, 9]
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "誰を押せばいいか解ったら<br>「優しく」押してみて",
+            en: "If you know who to tap,<br>be sure to do it gently."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p9"],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }	
+    },
+	{
+	target: "#p5",
+        message: {
+            ja: "ついでにもう一問<br>押してみて",
+            en: "Here is one more for you.<br>Give it a tap!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p1"],
+	boardState: [1, 3, 6, 5, 2, 9, 4, 7, 8],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+　　},
+	{ 
+        target: "#p9",
+        message: {
+            ja: "分かってくれたかな？<br>話を進めるよ",
+            en: "Did you get it?<br>Let's move forward."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p7",
+        message: {
+            ja: "ここが「７」のHOMEだね",
+            en: "This is where \"7\" belongs."
+        },
+        pos: { x: 0, y:500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "あと二回押してHOMEって時に・・・",
+            en: "So, when it needs two more taps<br>to go HOME..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p4",
+        message: {
+            ja: "ここ！",
+            en: "Here!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 6, 9, 7, 3, 5, 1, 4, 8]	
+    },
+		{ 
+        target: "#p1",
+        message: {
+            ja: "ここ！",
+            en: "Here!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [7, 3, 9, 2, 6, 5, 1, 4, 8]
+    },
+		{ 
+        target: "#p2",
+        message: {
+            ja: "ここ！",
+            en: "Here!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 7, 6, 2, 9, 5, 1, 4, 8]
+    },
+	{ 
+        target: "#p3",
+        message: {
+            ja: "ここ！",
+            en: "Here!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 7, 2, 5, 9, 1, 4, 8]
+	   
+    },
+	{ 
+        target: "#p6",
+        message: {
+            ja: "最後！ここ！",
+            en: "And finally, here!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "今の５か所の何処かに<br>「７」がいるだけで<br>私には答えが解るんだよ！",
+            en: "Just having \"7\" in one of those<br>five spots is more than enough<br>for me to know the answer!"
+        },
+        pos: { x: 0, y:500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]             	
+    },	
+	{ 
+        target: "#p9",
+        message: {
+            ja: "どうして解るのかって言うと<br>彼がどうやってHOMEを目指すか<br>それが判るからだよ",
+            en: "How do I know, you ask?<br>Because I can see exactly how<br>he will make his way HOME."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: ".....<br>.....",
+            en: ".....<br>....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "二回飛んでHOMEに行こうとすると<br>「７」はあそこを通るしかないんだよ",
+            en: "To reach HOME in two jumps,<br>\"7\" has no choice but to pass<br>through that exact spot."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: ".....<br>.....<br>.....",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "もう解ったかな<br>「７」だけじゃないよ",
+            en: "Do you see it now?<br>It's not just about \"7\"."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "真ん中の「５」以外は<br>同じようなマスが５つずつあるから<br>難易度２の問題はもう迷わないね",
+            en: "Except for \"5\" in the center,<br>each has five similar spots.<br>So you won't get lost on Level 2!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "僕の事呼んだ？",
+            en: "Did somebody call me?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "いや呼んだわけじゃないよ<br>君だけ特別って話をしてたんだ",
+            en: "Oh, we didn't call you.<br>We were just saying how<br>special you are."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "特別だって？<br>そういっていつも僕を仲間外れに・・・",
+            en: "Special?<br>You always use that word<br>to leave me out..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "仲間外れになんてしてないんだけどな",
+            en: "Oh, come on.<br>I'm not leaving you out."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "僕は真ん中にいるから<br>みんなが良く見えるんだけど<br>１ ２ ３ ６ ９ ８ ７ ４<br>いつもこの順番で並んでるけど<br>僕だけ入る所がないじゃないか",
+            en: "Since I'm in the center,<br>I can see everyone really well...<br>1 2 3 6 9 8 7 4...<br>They're always lined up like that,<br>so there's no space for me!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+　　　　{ 
+        target: "#p9",
+        message: {
+            ja: "いや、やっぱり君は特別だよ<br>今、自分で言ったでしょ<br>みんなの事が良く見えるって<br>私からだと４ １ ２の顔は<br>よく見えないんだよ",
+            en: "No, you really are special.<br>You said it yourself just now,<br>that you can see everyone well.<br>From where I am, I can't see<br>the faces of 4, 1, and 2 very well."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "みんなの顔がよく見えて<br>どこに居たって一歩でHOMEに行ける<br>とてもうらやましいよ",
+            en: "You can see everyone's face,<br>and you can go HOME in just one step<br>no matter where you are.<br>I'm truly envious of you."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+　　　　{ 
+        target: "#p5",
+        message: {
+            ja: "そ、そうなのかな<br>僕って特別なのかな<br>～♪",
+            en: "R-Really?<br>Am I really that special?<br>〜♪"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+　　　　{ 
+        target: "#p9",
+        message: {
+            ja: "「５」の機嫌も良くなったみたいだし<br>一つ重要なロジックを紹介しよう<br>このパズルの目的は<br>みんなをHOMEに導くこと・・・",
+            en: "Now that \"5\" is in a better mood,<br>let me share a key piece of logic.<br>The objective of this puzzle<br>is to guide everyone HOME..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "でもそれは言い換える事が出来て<br>「１」を起点にすると・・・",
+            en: "But we can phrase that differently.<br>If we take \"1\" as our starting point..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "「５」を中心にして",
+            en: "...and with \"5\" at the center."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+        { 
+        target: "#p1",
+        message: {
+            ja: "「１」！",
+            en: "\"1\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p2",
+        message: {
+            ja: "「２」！",
+            en: "\"2\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p3",
+        message: {
+            ja: "「３」！",
+            en: "\"3\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p6",
+        message: {
+            ja: "「６」！",
+            en: "\"6\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "「９」！",
+            en: "\"9\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+        { 
+        target: "#p8",
+        message: {
+            ja: "「８」！",
+            en: "\"8\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p7",
+        message: {
+            ja: "「７」！",
+            en: "\"7\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p4",
+        message: {
+            ja: "「４」！",
+            en: "\"4\"!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+
+	{ 
+        target: "#p5",
+        message: {
+            ja: "５を中心にして<br>１ ２ ３ ６ ９ ８ ７ ４ と<br>時計回りに並べること<br>と言い換える事ができる",
+            en: "It can be phrased as:<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "入れ替わってる順番を<br>限られた回数を使って<br>どうやって並べ治すか<br>こう考えてみるんだよ",
+            en: "Tap the center '5'!<br>arranging 1 2 3 6 9 8 7 4<br>in a clockwise order<br>around the center \"5\"."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "「３」に目を向けてみるよ<br>これがHOMEだよね",
+            en: "Let's focus on \"3\" for a moment.<br>This is its HOME, right?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+
+	{ 
+        target: "#p2",
+        message: {
+            ja: "あと１回の時・・・",
+            en: "When there's 1 move left..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 5, 9, 4, 7, 8]
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "あと２回の時・・・",
+            en: "When there are 2 moves left..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 9, 2, 5, 8, 1, 4, 7]
+    },
+	{ 
+        target: "#p4",
+        message: {
+            ja: "あと３回の時・・・",
+            en: "When there are 3 moves left..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [6, 9, 8, 3, 5, 7, 2, 1, 4]
+    },
+	{ 
+        target: "#p7",
+        message: {
+            ja: "あと４回の時・・・",
+            en: "When there are 4 moves left..."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "今見せたのが<br>それぞれのタイミングで<br>「３」がいるべき場所ってことだよ",
+            en: "What I just showed you<br>is where \"3\" should be<br>at each of those moments."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+
+	{ 
+        target: "#p5",
+        message: {
+            ja: "難易度３の問題を用意したから<br>さっそく一問解いてみよう<br>最初の数字は解るかな？",
+            en: "I've set up a Level 3 puzzle for you.<br>Let's try solving it right away.<br>Can you figure out the first number?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "真ん中の数字が<br>あと２回の時にいるべき場所は<br>どこだったか覚えてる？",
+            en: "Do you remember where the center number<br>should be when there are 2 moves left?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4]
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: [],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4]	
+    },	
+　　　　{ 
+        target: "#p5",
+        message: {
+            ja: "思い出したら<br>どこを押したらいいか<br>考えてみよう",
+            en: "Once you remember,<br>think about where to press."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4]
+    },
+	{ 
+        target: "#p4",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: [],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4]	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "１つ目の数字は解ったかな<br>解ったら押してみよう<br>一回押したらNEXTを押してね",
+            en: "Did you find the first number?<br>If you did, go ahead and press it.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p4"],
+	boardState: [6, 9, 7, 2, 3, 5, 8, 1, 4],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "２つ目の数字は解かるかな<br>あと二回しか押せないけど<br>あの数字があんな所にいるよ<br>解るかな？",
+            en: "Can you find the second number?<br>You only have two moves left.<br>Look, that number is over there!<br>Do you see it?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	{ 
+        target: "#p6",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "あの数字はまずあそこに行くんだよ",
+            en: "That number needs to go there first."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	
+{ 
+        target: "#p5",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "だったらどこを押せばいいのか<br>解るかな？",
+            en: "So, do you know which one to press?<br>Can you figure it out?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: ".....",
+            en: "....."
+        },
+        pos: { x: 100, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: [],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5]	
+    },
+	
+　　　　{ 
+        target: "#p5",
+        message: {
+            ja: "２つ目の数字は解ったかな<br>解ったら押してみよう<br>一回押したらNEXTを押してね",
+            en: "Did you find the second number?<br>If you did, go ahead and press it.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p9"],
+	boardState: [3, 6, 9, 2, 8, 7, 1, 4, 5],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "ここまで来たらあと１回<br>もう解ってるよね？<br>さあ押してみよう",
+            en: "Just one more move to go!<br>I'm sure you already know the answer.<br>Go ahead and press it!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p8"],
+	boardState: [2, 3, 6, 1, 7, 9, 4, 8, 5],
+	check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "どうかな？<br>何となく解ってもらえたかな？",
+            en: "How did it go?<br>Did you get the hang of it?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]	
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "何となくなら解るんだよな",
+            en: "Yeah, I get the general idea."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "急にどうしたんだい「８」",
+            en: "Whoa, where did that come from, \"8\"?"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "ちょっと話が聞こえてな<br>俺もたまには解こうって思うんだけど<br>俺たち９人もいるだろ！",
+            en: "I just happened to overhear you.<br>I actually want to solve it sometimes,<br>but come on, there are nine of us!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+
+	{ 
+        target: "#p8",
+        message: {
+            ja: "誰を押せばいいんだって<br>多いから迷うんだよな",
+            en: "Like, \"Who the heck do I press?\"<br>There are too many, I get lost."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "なんかもっとズバッと<br>こいつが怪しい！ってのは無いのか？",
+            en: "Isn't there a quicker way, like,<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "そうか・・・<br>だったらこんな方法を試してみるかい？",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "なんかいい方法があるんなら<br>是非とも聞かせてくれ",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "先ほど話題にした<br>それぞれの数字が<br>どのタイミングで<br>どこに居るべきかという話<br>それを詳しく話そう",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+
+	{ 
+        target: "#p5",
+        message: {
+            ja: "これは難易度３の問題なんだけど<br>難易度の回数３回<br>真ん中の私を押してみて",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p5"],
+	boardState: [3, 6, 8, 2, 9, 7, 5, 1, 4],
+		check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "いくつかの数字たちがHOMEにいるのがわかるよね",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 5, 2, 4, 9, 3, 7, 8, 6]	
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "１",
+            en: "1"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },	
+	{ 
+        target: "#p4",
+        message: {
+            ja: "４",
+            en: "4"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p7",
+        message: {
+            ja: "７",
+            en: "7"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "８",
+            en: "8"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "今、HOMEにいる４人は<br>何となく飛んでれば<br>HOMEに辿り着く",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "つまり、この問題のカギは<br>今HOMEに居ない・・・",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p2",
+        message: {
+            ja: "５",
+            en: "5"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p3",
+        message: {
+            ja: "２",
+            en: "2"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	
+　　　　{ 
+        target: "#p5",
+        message: {
+            ja: "９",
+            en: "9"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p6",
+        message: {
+            ja: "３",
+            en: "3"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "６",
+            en: "6"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "この５つの数字が<br>問題を解くカギになる<br>こう考えれば<br>候補を５つに減らすことが出来るんだ",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "すごいな！<br>これなら解りそうだ<br>続きはどうするんだ",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "更にさっき私を３回押した時・・・",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p3",
+        message: {
+            ja: "２",
+            en: "2"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p6",
+        message: {
+            ja: "３",
+            en: "3"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "６",
+            en: "6"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 150,
+        allow: []	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "この３人が<br>HOMEを通り過ぎたことに<br>気が付いたかい？",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "この３人は一回立ち止まっていれば<br>HOMEに居られたのかもしれない<br>もし一回押していれば・・・",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "じゃあさっそく解いてみよう<br>真ん中の私は誰と誰の間に行けばいいと思う",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 8, 2, 9, 7, 5, 1, 4]
+    },	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "１２３６９８７４・・・",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "解ったら<br>そこに行くための数字を押してくれる<br>一回押したらNEXTを押してね",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p2"],
+	boardState: [3, 6, 8, 2, 9, 7, 5, 1, 4],
+		check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },	
+	{ 
+        target: "#p5",
+        message: {
+            ja: "次は「３」が真ん中にいるけど<br>あの数字の順番から考えれば<br>解るよね？",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 6, 9, 5, 3, 8, 1, 4, 7]
+	
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "押してみよう！<br>一回押したらNEXTを押してね",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p1"],
+	boardState: [2, 6, 9, 5, 3, 8, 1, 4, 7],
+		check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "よく私たちの並びを見てみて<br>",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [2, 3, 6, 1, 5, 9, 4, 7, 8]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "HOMEにいる「５」を中心に<br>１２３６９８７４・・・<br>あの並びが完成してるよね",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "もう押すのはあの数字だよ<br>一回押したらNEXTを押してね",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p5"],
+	boardState: [2, 3, 6, 1, 5, 9, 4, 7, 8],
+		check: function() {
+          if (!hasPressedTarget) {
+             return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "どうかな？<br>解き方は解ってきたかな？",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p8",
+        message: {
+            ja: "何だか解ってきた気がするな",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "みんなが解けるようになって<br>パズルを楽しんでくれたら<br>私もうれしいよ",
+            en: "Tap the center '5'!<br>The panel you tap stays still."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "ちなみにさっきのこの問題<br>答えは数字を６２５と押したけど<br>いくつか別解が存在する",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 8, 2, 9, 7, 5, 1, 4]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "面白そうだから<br>もっとそれについて<br>研究しようと思ってるよ",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [3, 6, 8, 2, 9, 7, 5, 1, 4]
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "せっかく話を聞いてくれたんだ<br>ここので話は少し内緒にして<br>誰かと早解き勝負でもしてみたら？",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p9",
+        message: {
+            ja: "<br>きっと勝てると思うよ",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },	
+{ 
+        target: "#p9",
+        message: {
+            ja: "そしたらここでの話を伝えてほしい<br>私の望みはより多くの人に<br>このパズルを楽しんでもらうことだから",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+	{
+	target: "#p9",
+        message: {
+            ja: "じゃあまた<br>いっしょに頭を回転させよう",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 500 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+{ 
+        target: "#p5",
+        message: {
+            ja: "・・・・",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "",
+            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+
+
+
+
+	
+
+// ... 続く
+];
+
+
 
     // --- 2. 共通関数 ---
 
@@ -121,7 +2382,7 @@ function abortDance() {
 
 function clearAllDanceEffects() {
     console.log("Cleaning up the stage...");
-	updateHyouji("✨ HOME ✨", "success");
+	//updateHyouji("✨ HOME ✨", "success");
 
     // 1. 数字（ゴースト）の消去
     if (typeof $allGhosts !== 'undefined') {
@@ -709,6 +2970,199 @@ function clearBubbles() {
     $(".lemon-bubble").remove();
 }
 
+
+function applyTutorialStyle(step) {
+  // 1. 輪っかとガイドの大きさを変更
+  gsap.to("#guide-circle, #guide-ring", {
+    attr: { r: step.radius },
+    duration: 0.5,
+    ease: "back.out(1.7)" // 少し弾むような演出
+  });
+
+  // 2. メッセージボックスの幅を変更
+  gsap.to("#tutorial-msg-box", {
+    width: step.boxWidth,
+    duration: 0.3
+  });
+}
+
+function setupTutorialState() {
+    // 1. モードと歩数のリセット
+    isComboMode = false;
+	modeMoves = 0;
+    selectedSteps = 0;
+    inputBuffer = [];
+    $("#input-mode").text("SINGLE").removeClass("mode-active");
+    $("#tebo").text("0");
+
+    // 2. 盤面を初期状態（1〜9）に戻す
+    panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    panelState.forEach((n, i) => posMap[n - 1] = i);
+    refreshPanels();
+
+    // 3. サウンドを強制的にONにする
+    isSoundOn = true;
+    $(".sys-sound").css("opacity", "1.0");
+
+    // 4. 表示のリセット
+   // updateHyouji("TUTORIAL", "default");
+
+    // 5. 特殊状態の解除（ダンス中やアニメーション中なら停止）
+    if (isDancing) abortDance();
+    isAnimating = false;
+}
+
+/**
+ * チュートリアルステップを表示する（整理・統合版 ＋ 盤面強制配置）
+ */
+function showTutorialStep(tutorialStep) {
+
+    // 1. 押されたボタンの type に応じてデータ配列を完全に切り替え
+    const step = (tutorialType === "hint") 
+        ? hintData[tutorialStep] 
+        : tutorialData[tutorialStep];
+    if (!step) return;
+if (typeof step.onStepStart === "function") {
+    step.onStepStart();
+}
+	
+
+    // 🌟 【新機能】盤面の強制配置（boardState）の処理
+    // ステップデータ内に boardState が存在する場合のみ実行
+    if (step.boardState && Array.isArray(step.boardState)) {
+        // 配列の値を受け渡し（値コピー）
+        panelState = [...step.boardState];
+        
+        // 盤面を再描画（一瞬で切り替える場合は false、プルプル弾ませたい場合は true）
+        refreshPanels();
+    }
+	
+    hasPressedTarget = false;
+
+    // 言語に応じたメッセージの取得
+    const messageText = step.message[currentLang] || step.message['ja'];
+
+    // 2. ターゲット要素の座標取得（#content基準）
+    const $target = $(step.target);
+    const targetPos = $target.position(); // 親要素からの相対位置
+    const targetWidth = $target.outerWidth();
+    const targetHeight = $target.outerHeight();
+
+    const cx = targetPos.left + targetWidth / 2;
+    const cy = targetPos.top + targetHeight / 2;
+
+    // 3. 演出：ガイド（輪っか）の移動と変形
+    $("#tutorial-guide-layer").show();
+    $("#guide-ring").show();
+
+    gsap.to("#guide-circle, #guide-ring", {
+        attr: { 
+            cx: cx, 
+            cy: cy, 
+            r: step.radius || 60 
+        },
+        duration: 0.5,
+        ease: "back.out(1.7)"
+    });
+
+    // 4. 演出：メッセージボックスの更新と移動
+    $("#tutorial-msg-text").html(messageText);
+    $("#tutorial-msg-box").show();
+
+    gsap.to("#tutorial-msg-box", {
+        left: step.pos.x,
+        top: step.pos.y,
+        width: step.boxWidth || 240,
+        duration: 0.4,
+        ease: "power2.out"
+    });
+
+    // 5. 操作制限の適用
+    setTutorialLock(step.allow);
+}
+// チュートリアル用の操作制限関数
+function setTutorialLock(allowList) {
+    // 1. まず全ての操作（パネル、ボタン、アイコン）を無効化
+    $(".panel, .bot,#tebo, .icon-btn").css("pointer-events", "none").css("cursor", "default");
+
+    // 2. 許可リスト(allowList)にある要素だけを有効化
+    if (allowList && allowList.length > 0) {
+        allowList.forEach(selector => {
+            $(selector).css("pointer-events", "auto").css("cursor", "pointer");
+        });
+    }
+
+    // 3. チュートリアル自身の操作ボタン（NEXTや言語選択）は常に許可
+    $("#tutorial-next-btn, #lang-jp, #lang-en").css("pointer-events", "auto").css("cursor", "pointer");
+}
+
+// チュートリアル終了時に全てを元に戻す関数
+function unlockAll() {
+    $(".panel, .bot,#tebo, .icon-btn").css("pointer-events", "auto").css("cursor", "pointer");
+}
+
+function startInteractiveTutorial() {
+    tutorialStep = 0; // 0にリセット
+    setupTutorialState(); // 盤面リセット
+    
+    // シンプルに「0番目をお願い！」とだけ頼む
+    showTutorialStep(tutorialStep);
+}
+
+function clearTutorialArrows() {
+    $(".tutorial-arrow").remove();
+}
+
+/**
+ * ４．タッチされた場所に従って、角度を合わせた矢印を表示する関数（サイズ1/3縮小版）
+ * @param {number} clickedIdx - タップされたパネルのインデックス (0 〜 8)
+ */
+function displayTutorialArrows(clickedIdx) {
+    // 該当するインデックスの矢印設定を取得
+    const arrowConfig = TUTORIAL_ARROW_MAP[clickedIdx];
+    if (!arrowConfig || arrowConfig.length === 0) return;
+
+    // 基準となるパズルグリッドのエレメントと位置を取得
+    const $grid = $(".puzzle-grid");
+    if ($grid.length === 0) return;
+    
+    const gridOffset = $grid.offset(); // 画面全体に対するグリッドの絶対座標（左上）
+
+    // 8本の矢印を動的に生成して配置
+    arrowConfig.forEach(cfg => {
+        const coords = ARROW_POSITIONS[cfg.posIdx];
+        if (!coords) return;
+
+        // body直下に絶対配置で浮かせる<img>を生成
+        const $arrow = $("<img>", {
+            src: "IMG/yajirusi.png", // 透過矢印画像
+            class: "tutorial-arrow", // 消去時のセレクタ用クラス
+            css: {
+                position: "absolute",
+                // 🌟 【サイズ変更】元の画像の幅を3分の1（約33%）に制限します
+                // ※もしこれでも大きすぎる場合は、"24px" や "30px" のように固定ピクセル指定も可能です
+                width: "45%", 
+                maxWidth: "45px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
+
+                // グリッドの左上座標を基準に、計算された相対座標を足す
+                left: (gridOffset.left + coords.x) + "px",
+                top: (gridOffset.top + coords.y) + "px",
+                
+                // 🌟 画像自体の中心（50% 50%）を基準にして、その場で回転させる
+                transform: "translate(-50%, -50%) rotate(" + cfg.angle + "deg)",
+                transformOrigin: "center center",
+
+                zIndex: 1000,          // パネルよりも確実に手前に出す
+                pointerEvents: "none", // 矢印自体が背後のパネルクリックを邪魔しないようにガード
+                display: "none"        // アニメーション用に最初は非表示
+            }
+        });
+
+        // 画面に追加してフェードイン
+        $("body").append($arrow);
+        $arrow.fadeIn(100);
+    });
+}
 // 補助関数：Promiseを返さず、即座にアニメーションを開始するロジック
 function danceStepLogic(targetHome, duration) {
     const clickedIdx = targetHome - 1;
@@ -862,6 +3316,7 @@ async function refreshPanelsExt(mode = "normal") {
         }
     });
 }
+
   function playSnd(type, force = false) {
         if (!force && isAnimating && type === 'push') return; 
         if (!isSoundOn) return;
@@ -896,33 +3351,46 @@ async function refreshPanelsExt(mode = "normal") {
         playSnd(voiceKey, true);
     }
 
+   
     // デイリー開始
-    async function startChallengeProcess() {
-        if (isAnimating) return;
-        isComboMode = true; 
-        isChallengeMode = true;
-        selectedSteps = dailyTargetSteps; 
-        modeMoves = selectedSteps;
+async function startChallengeProcess() {
+    if (isAnimating) return;
 
-        $("#input-mode").text("DAILY").addClass("mode-active"); 
-        $("#tebo").text(modeMoves);
-        
-        playSnd('click');
+    const currentMode = dailyTargetSteps; // 今のモード（3 or 4）を確認
 
-	updateUIState(false); 
-        currentAnswer = [];
-        updateHyouji("CONNECTING...", "network");
+    isComboMode = true; 
+    isChallengeMode = true;
+    selectedSteps = currentMode; 
+    modeMoves = selectedSteps;
 
-        await setDailyChallenge(selectedSteps);
-        
-        inputBuffer = [];
-        updateHyouji("READY?", "ready");
-        
-        setTimeout(() => {
-            updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+    $("#input-mode").text("DAILY").addClass("mode-active"); 
+    $("#tebo").text(modeMoves);
+    
+    playSnd('click');
+    updateUIState(false); 
+    currentAnswer = [];
+    updateHyouji("CONNECTING...", "network");
+
+    await setDailyChallenge(selectedSteps);
+    
+    inputBuffer = [];
+    updateHyouji("READY?", "ready");
+    
+    setTimeout(() => {
+        updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+
+        // --- ここが修正ポイント ---
+        // すでにこのモードの計測が始まっている場合は、startTime を上書きしない
+        if (!isTimerActive[currentMode]) {
             startTime = performance.now();
-        }, 1200);
-    }
+            isTimerActive[currentMode] = true; // 計測開始フラグを立てる
+            console.log(`Mode ${currentMode} 計測開始!`);
+        } else {
+            console.log(`Mode ${currentMode} はすでに計測中なので時間を維持します。`);
+        }
+        // ------------------------
+    }, 1200);
+}
 
     async function setDailyChallenge(steps) {
         isAnimating = true; 
@@ -948,10 +3416,28 @@ async function refreshPanelsExt(mode = "normal") {
     }
 
     async function handleRanking(clearTime) {
-        await sendLog("postScore", selectedSteps, { time: parseFloat(clearTime), appType: "POP" });
-        openGlobalRank(); 
-        setTimeout(() => { showGlobalRank(selectedSteps, 0); }, 800);
+    // 1. まずはフラグをリセット（忘却防止）
+    if (typeof isTimerActive !== 'undefined') {
+        isTimerActive[selectedSteps] = false;
     }
+
+    // 2. 【重要】タイムを画面中央（表示エリア）に出す！
+    // 以前の updateHyouji ロジックに従って「TIME: 12.34s」のように表示します
+    const timeDisplay = parseFloat(clearTime).toFixed(2) + "s";
+    updateHyouji("TIME: " + timeDisplay, "network");
+
+    // 3. 通信は「投げっぱなし」にする（await を外す）
+    // これにより、送信完了を待たずに即座にランキングが開きます
+    sendLog("postScore", selectedSteps, { time: parseFloat(clearTime), appType: "POP" });
+
+    // 4. ランキング画面を即座に表示
+    openGlobalRank(); 
+    
+    // 5. 少し遅れて最新のランキングデータを読み込む
+    setTimeout(() => { 
+        showGlobalRank(selectedSteps, 0); 
+    }, 800);
+}
 
     async function sendLog(action, mode, extra = {}) {
         try {
@@ -1082,121 +3568,8 @@ async function refreshPanelsExt(mode = "normal") {
             });
         });
     }
-// モーダル表示関数
-function openHowToModal() {
-    if ($("#how-to-modal").length === 0) {
-        $("body").append(`
-            <div id="how-to-modal" class="modal-overlay" style="display:none;">
-                <div class="modal-content">
-                    <div class="tab-container" style="margin-bottom: 15px;">
-                        <button class="tab-btn active" onclick="switchHowToLang('en')">English</button>
-                        <button class="tab-btn" onclick="switchHowToLang('ja')">日本語</button>
-                    </div>
-                    
-                    <div id="how-to-body" style="min-height: 200px; text-align: left; font-family: sans-serif;">
-                        </div>
 
-                    <button class="bot" onclick="$('#how-to-modal').fadeOut(200)" 
-                            style="width:100%; background:#90a4ae; margin-top:20px; box-shadow: 0 5px 0 #546e7a;">
-                        CLOSE
-                    </button>
-                </div>
-            </div>
-        `);
-    }
-    // 開くたびに初期言語（または現在の設定）を表示
-    switchHowToLang('en'); 
-    $("#how-to-modal").fadeIn(200);
-}
 
-const howToTexts = {
-    en: {
-    title: "HOW TO PLAY",
-    content: `
-        <p>First, make sure the button on the top-left is set to <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span>, then tap any number above!</p>
-        <p>See? We're all jumping around!</p>		
-        <p>The rule is super easy: <span style="color:#e74c3c; font-weight:bold;">The number you tap stays still. All the others hop one spot clockwise!</span></p>
-
-        <p style="margin-top:10px;">
-        <p>Use the red buttons to pick a difficulty from 0 to 6.</p>
-        <p>Pick <span style="color:#ef5350; font-weight:bold;">[0]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>. We’ll show you our <span style="color:#8bc34a; font-weight:bold;">"HOME"</span>!</p>
-        <p>The goal is to lead every number back to its <span style="color:#8bc34a; font-weight:bold;">"HOME"</span>!</p>
-  
-        <p style="margin-top:10px;">
-        <p>Now, pick <span style="color:#ef5350; font-weight:bold;">[1]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>!</p>
-        <p>You can reach the goal in just one tap.</p>
-        <p>Here’s a hint: <span style="color:#8bc34a; font-weight:bold;">Just tap the one number you want to keep in its place!</span></p>
-
-        <p style="margin-top:10px;">
-        <p>Once you've got it, try picking <span style="color:#ef5350; font-weight:bold;">[2]</span> and hit <span style="color:#ffd54f; font-weight:bold;">[SET]</span>.</p>
-        <p>It gets trickier and trickier as the numbers go up!</p>
-
-        <p style="margin-top:10px;">
-        <p>In <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span> mode, we move with every tap. In <span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span> mode, we wait until you enter all your moves.</p>
-
-        <p style="margin-top:10px;">
-        <p>Tap <span style="color:#8bc34a; font-weight:bold;">[PEEK]</span> to glimpse the first move, and use <span style="color:#8bc34a; font-weight:bold;">[FORBIDDEN FRUIT]</span> at your own risk♪</p>
-            
-        <p style="margin-top:10px;">
-        <p>Ready for a real test? Try the <span style="color:#90a4ae; font-weight:bold;">Daily Challenge</span>!</p>
-        <p><span style="color:#90a4ae; font-weight:bold;">[MODE 3]</span> takes 3 taps, and <span style="color:#90a4ae; font-weight:bold;">[MODE 4]</span> takes 4. Which will you choose?</p>
-        <p>Hit <span style="color:#90a4ae; font-weight:bold;">[START]</span> to race players from all over the world!</p>
-
-        <p>You can check the scores with <span style="color:#90a4ae; font-weight:bold;">[RANK]</span>.</p>
-        <p>Can you make it into the TOP 5?</p>
-    `
-},
-    ja: {
-        title: "遊び方",
-        content: `
-            <p>まずは左上のボタンが <span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span> の時に、上の数字たちをどれか一回押してみて！</p>
-	    <p>数字たちが元気に動くのがわかるよね</p>		
-            <p>動くルールはとっても簡単：<span style="color:#e74c3c; font-weight:bold;">押した数字はそのままで、それ以外の数字がぜんぶ、時計回りに動いてくれる</span>んだ</p>
-
-            <p style="margin-top:10px;">
-	<p>下の赤いボタンで、難しさを 0 から 6 まで選べるよ</p>
-	<p><span style="color:#ef5350; font-weight:bold;">[0]</span>を選んでから <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押すと、僕たちの <span style="color:#8bc34a; font-weight:bold;">「HOME」</span> を教えてあげるね</p>
-	<p>パズルのゴールは、みんなをこの<span style="color:#8bc34a; font-weight:bold;">「HOME」</span>に連れていくことだよ！</p>
-  
-            <p style="margin-top:10px;">
-	<p>次は <span style="color:#ef5350; font-weight:bold;">[1]</span> を選んで <span style="color:#ffd54f; font-weight:bold;">[SET]</span> を押してみて!</p>
-	<p>あと1回だれかを押せばゴールだよ</p>
-	<p>ヒントはね、<span style="color:#8bc34a; font-weight:bold;">動かしたくない数字を、直接ポチッとする</span>ことだよ！</p>
-
-	<p style="margin-top:10px;">
-	<p>わかるようになったら<span style="color:#ef5350; font-weight:bold;">[2]</span>を選んで<span style="color:#ffd54f; font-weight:bold;">[SET]</span>を押そう </p>
-	<p>数を増やせば、どんどん手強くなるからね</p>
-
-	<p style="margin-top:10px;">
-	<p><span style="color:#4fc3f7; font-weight:bold;">[SINGLE]</span>だと一回ずつ動くけど、<span style="color:#4fc3f7; font-weight:bold;">[COMBO]</span>にすると、答えをぜんぶ入れ終わるまで数字たちはじっと待っててくれるよ</p>
-
-            <p style="margin-top:10px;">
-	<p><span style="color:#8bc34a; font-weight:bold;">[PEEK]</span> で最初の一手がのぞけるし、 <span style="color:#8bc34a; font-weight:bold;">[FORBIDDEN FRUIT]</span> は自己責任で♪</p>
-            
-            <p style="margin-top:10px;">
-	<p>慣れてきたら <span style="color:#90a4ae; font-weight:bold;">デイリーチャレンジ</span> に挑戦だ！</p>
-	<p><span style="color:#90a4ae; font-weight:bold;">[MODE3]</span> なら３回、<span style="color:#90a4ae; font-weight:bold;">[MODE4]</span>なら４回押せば解ける問題、どちらを選ぶ？ </p>
-	<p><span style="color:#90a4ae; font-weight:bold;">[START]</span> を押して世界中のみんなと競争しよう！ </p>
-
-	<p><span style="color:#90a4ae; font-weight:bold;">[RANK]</span>でランキングの確認が出来るよ</p>
-	<p>TOP 5 には入れたかな？</p>
-        `
-    }
-};
-
-window.switchHowToLang = function(lang) {
-    // ボタンの見た目を切り替え
-    $("#how-to-modal .tab-btn").removeClass("active");
-    if(lang === 'en') $("#how-to-modal .tab-btn:eq(0)").addClass("active");
-    else $("#how-to-modal .tab-btn:eq(1)").addClass("active");
-
-    // 中身を書き換え
-    const data = howToTexts[lang];
-    $("#how-to-body").html(`
-        <h2 style="font-family:'Fredoka One'; font-size:18px; color:#546e7a; text-align:center; margin-bottom:10px;">${data.title}</h2>
-        <div>${data.content}</div>
-    `);
-};
     async function executeCombo() {
         if (inputBuffer.length !== selectedSteps || selectedSteps === 0) {
             isAnimating = false; 
@@ -1281,7 +3654,7 @@ window.switchHowToLang = function(lang) {
     function resetToInitial() {
         panelState = [...savedState];
         panelState.forEach((n, i) => posMap[n - 1] = i);
-        refreshPanels();
+        refreshPanelsExt("normal");
     }
 
     // --- ランキング関連 ---
@@ -1305,12 +3678,12 @@ window.switchHowToLang = function(lang) {
             `);
         }
         $("#rank-modal").fadeIn(200);
-        changeRankDay(0, targetSteps);
+        changeRankDay(0, dailyTargetSteps);
     }
 
     window.changeRankDay = function(offset, forcedSteps = null) {
         currentDayOffset = offset;
-        let steps = forcedSteps || ((isChallengeMode && selectedSteps > 0) ? selectedSteps : dailyTargetSteps);
+        let steps = (forcedSteps !== null) ? forcedSteps : dailyTargetSteps;
         $(".tab-btn").removeClass("active");
         $(`.tab-btn:eq(${offset})`).addClass("active");
         showGlobalRank(steps, offset);
@@ -1351,17 +3724,104 @@ window.switchHowToLang = function(lang) {
         }
     } 
 
+	// --- 2. 共通の開始処理 ---
+function openTutorialSelector(type) {
+    if (isAnimating) return;
+    tutorialType = type; // ここで「どっちのボタンから来たか」を記録！
+
+    if (isSoundOn) playSnd('click');
+    if (isDancing) abortDance();
+
+    // 盤面を綺麗にして、言語選択を表示
+    refreshPanelsExt("normal");
+    $("#tutorial-overlay").css("display", "flex").hide().fadeIn(200);
+}
+
     // --- イベント登録 ---
+// NEXTボタンをクリックした時の挙動
+$(document).on("click", "#tutorial-next-btn", function() {
+    if (isSoundOn) playSnd('click');
+
+
+
+    // ★【修正】現在どちらのモードかによって、参照する配列そのものを切り替える
+    const currentDataArray = (tutorialType === "hint") ? hintData : tutorialData;
+
+	// 現在のステップのデータを取得（切り替えた配列から取得）
+    const currentStepData = currentDataArray[tutorialStep];
+
+    // --- 【追加】条件チェックのロジック ---
+    if (currentStepData && typeof currentStepData.check === "function") {
+        if (!currentStepData.check()) {
+            // 条件を満たしていない場合は、次へ進まずに「警告」を出す
+            console.log("まだ条件を満たしていません");
+            
+            // 演出：メッセージボックスをガタガタ揺らして「ダメだよ」と伝える
+            gsap.to("#tutorial-msg-box", {
+                x: "+=10",
+                yoyo: true,
+                repeat: 5,
+                duration: 0.05,
+                onComplete: () => {
+                    // 揺れ終わったら元の位置（x座標）に戻す
+                    // step.pos.x がある場合はそれ、なければ現在の位置で固定
+                    gsap.set("#tutorial-msg-box", { x: currentStepData.pos.x });
+                }
+            });
+            
+            // ここで処理を終了（tutorialStep++ させない）
+            return;
+        }
+    }
+    // ------------------------------------
+
+		// 合格、または check がない場合は次のステップへ
+    tutorialStep++;
+
+    // 合格、または check がない場合は次のステップへ
+    // ★【修正】終了判定の基準も、切り替えた配列の長さ（length）に合わせる
+    if (tutorialStep < currentDataArray.length) {
+        showTutorialStep(tutorialStep);
+    } else {
+        // 全ての説明が終わった場合
+        $("#tutorial-msg-box, #tutorial-guide-layer").fadeOut(300);
+        updateHyouji("Let's Try", "default");
+    
+   
+        
+        // 全てのロックを解除
+        unlockAll(); // 以前作った一括解除関数を使うとスッキリします
+    }
+});
+// --- チュートリアルボタンの制御 ---
+$("#start-tutorial").on("click", function() {
+    if (isDancing || isAnimating) return;
+    if (isSoundOn) playSnd('click');
+    
+    openTutorialSelector("basic");
+
+    });
 
 $('#how-to-btn').click(function() {
-	if (isDancing) {
-        abortDance();
-    }
-	if (isAnimating) return;
-	
-    playSnd('click');
-    openHowToModal();
+    if (isDancing || isAnimating) return;
+    if (isSoundOn) playSnd('click');
+    
+    openTutorialSelector("hint");
+        
 });
+
+// --- 言語選択ボタンの制御 ---
+$(".lang-btn").on("click", function() {
+    currentLang = $(this).data("lang"); // 'ja' か 'en' を取得
+    if (isSoundOn) playSnd('set');
+    
+    // モーダルを閉じてチュートリアルへ
+    $("#tutorial-overlay").fadeOut(200, function() {
+        startInteractiveTutorial();
+    });
+});
+
+
 
     $('.bot').click(function() {
 	if (isDancing) {
@@ -1380,21 +3840,35 @@ $('#how-to-btn').click(function() {
             currentAnswer = [];
             updateUIState(false);
             updateHyouji("READY?", "default");
-            refreshPanels();
+            refreshPanelsExt("normal");
         } 
         else if (id === "challenge-start") { 
 	if (isAnimating) return;
-    if (isLocked) unlockSystem(); // ロック解除
+	hasPressedTarget = true;
+    if (isLocked) unlockSystem(); 
+	refreshPanelsExt("normal");
 	startChallengeProcess(); 
 	}
-        else if (id === "rank") { openGlobalRank(); }
+        else if (id === "rank") {
+	hasPressedTarget = true; 
+	openGlobalRank(); 
+	}
     });
 
     $('.panel').on('click', function() {
+
+	hasPressedTarget = true;
         // 1. ガード：アニメーション中、またはクリア後のロック中は一切の入力を受け付けない
         if (isAnimating || isLocked) return; 
 
         const idx = $(".panel").index(this);
+
+	// 🌟 【ここを追加！】チュートリアルの矢印実験フラグが立っている場合
+    if (isArrowExperimentMode) {
+        clearTutorialArrows();       // ３．まず古い矢印を消す
+        displayTutorialArrows(idx);   // ４．タッチされたインデックス(0~8)に応じた場所に矢印を表示する
+        return;                      // 💡 ここで処理を終了し、以下の通常移動（COMBO/SINGLE）を完全にスキップ！
+    }
 
         if (isComboMode && selectedSteps > 0) {
             // --- COMBO モード時の入力処理 ---
@@ -1436,7 +3910,7 @@ $('#how-to-btn').click(function() {
         updateUIState(false);
         inputBuffer = [];
         updateHyouji(isComboMode ? (selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!") : "HOME", "default");
-        refreshPanels();
+        refreshPanelsExt("normal");
     });
 
     $("#tebo").on("click", function() {
@@ -1461,7 +3935,7 @@ $('#how-to-btn').click(function() {
         updateUIState(false);
         inputBuffer = [];
         updateHyouji(isComboMode && selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME", "default");
-        refreshPanels();
+        refreshPanelsExt("normal");
     });
 
     $("#sebo").on("click", function() {
@@ -1477,6 +3951,7 @@ $('#how-to-btn').click(function() {
         $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
     }
         playSnd('click');
+	hasPressedTarget = true;
         selectedSteps = modeMoves; 
         inputBuffer = [];
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -1501,7 +3976,7 @@ $('#how-to-btn').click(function() {
         savedAnswer = [...currentAnswer];
         savedSelectedSteps = selectedSteps;
         savedIsComboMode = isComboMode;
-        refreshPanels();
+        refreshPanelsExt("normal");
     });
 
     $("#resebo").on("click", function() {
@@ -1521,7 +3996,7 @@ $('#how-to-btn').click(function() {
             updateHyouji(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try", isComboMode ? "ready" : "default");
             $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
             $("#tebo").text(selectedSteps);
-            refreshPanels();
+            refreshPanelsExt("normal");
         }
     });
 
@@ -1553,5 +4028,5 @@ $('#how-to-btn').click(function() {
         setTimeout(() => { $(this).text("Forbidden fruit"); }, 3000);
     });
 
-    refreshPanels();
+    refreshPanelsExt("normal");
 });
