@@ -3141,8 +3141,8 @@ function displayTutorialArrows(clickedIdx) {
                 position: "absolute",
                 // 🌟 【サイズ変更】元の画像の幅を3分の1（約33%）に制限します
                 // ※もしこれでも大きすぎる場合は、"24px" や "30px" のように固定ピクセル指定も可能です
-                width: "60%", 
-                maxWidth: "60px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
+                width: "80%", 
+                maxWidth: "80px", // 10pxの隙間に合わせるための最大幅の目安（調整可能）
 //width: "clamp(36px, 11vw, 62px)",
 
 
