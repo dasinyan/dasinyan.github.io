@@ -762,8 +762,7 @@ const tutorialData = [
         pos: { x: 0, y: 250 },
         radius: 65,
         boxWidth: 340,
-        allow: [],
-	
+        allow: []	
 
     },
 	{ 
@@ -1210,7 +1209,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: ".....<br>.....<br>.....",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: ".....<br>.....<br>....."
         },
         pos: { x: 100, y: 500 },
         radius: 65,
@@ -1453,7 +1452,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "５を中心にして<br>１ ２ ３ ６ ９ ８ ７ ４ と<br>時計回りに並べること<br>と言い換える事ができる",
-            en: "It can be phrased as:<br>The panel you tap stays still."
+            en: "It can be phrased as:<br>arranging 1 2 3 6 9 8 7 4<br>in a clockwise order<br>around the center \"5\"."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -1464,7 +1463,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "入れ替わってる順番を<br>限られた回数を使って<br>どうやって並べ治すか<br>こう考えてみるんだよ",
-            en: "Tap the center '5'!<br>arranging 1 2 3 6 9 8 7 4<br>in a clockwise order<br>around the center \"5\"."
+            en: "Think of it this way:<br>how to rearrange<br>the shuffled sequence <br>with a limited number of moves."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -1808,7 +1807,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "そうか・・・<br>だったらこんな方法を試してみるかい？",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "I see...<br>Then why not try this approach?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -1819,7 +1818,7 @@ const hintData = [
         target: "#p8",
         message: {
             ja: "なんかいい方法があるんなら<br>是非とも聞かせてくれ",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "If you've got a good trick,<br>I'm all ears. Let's hear it!"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -1830,7 +1829,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "先ほど話題にした<br>それぞれの数字が<br>どのタイミングで<br>どこに居るべきかという話<br>それを詳しく話そう",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "Remember what we said?<br>Let's dive into exactly where<br>each number should be, and when."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -1842,7 +1841,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "これは難易度３の問題なんだけど<br>難易度の回数３回<br>真ん中の私を押してみて",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "This is a Level 3 puzzle.<br>That means we press 3 times.<br>Go ahead and tap me in the center!"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -1859,8 +1858,8 @@ const hintData = [
 	{ 
         target: "#p5",
         message: {
-            ja: "いくつかの数字たちがHOMEにいるのがわかるよね",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            ja: "いくつかの数字たちが<br>HOMEにいるのがわかるよね",
+            en: "You can see that some of the numbers<br>are already back in their HOME, right?"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -1916,7 +1915,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "今、HOMEにいる４人は<br>何となく飛んでれば<br>HOMEに辿り着く",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "Right now, those four at HOME<br>will just naturally drift back<br>into their places with a bit of luck."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -1927,7 +1926,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "つまり、この問題のカギは<br>今HOMEに居ない・・・",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "In other words, the key to this puzzle<br>lies with those who aren't HOME yet..."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -1994,7 +1993,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "この５つの数字が<br>問題を解くカギになる<br>こう考えれば<br>候補を５つに減らすことが出来るんだ",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "These 5 numbers hold the key<br>to solving the whole thing.<br>Look at it this way, and we can<br>narrow the suspects down to just 5!"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2005,7 +2004,7 @@ const hintData = [
         target: "#p8",
         message: {
             ja: "すごいな！<br>これなら解りそうだ<br>続きはどうするんだ",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "That's awesome!<br>Now it actually makes sense.<br>So, what's our next move?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2016,7 +2015,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "更にさっき私を３回押した時・・・",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "Furthermore, when you pressed me<br>3 times just a moment ago..."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2060,7 +2059,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "この３人が<br>HOMEを通り過ぎたことに<br>気が付いたかい？",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "Did you notice that<br>these 3 numbers have already<br>passed right through their HOME?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2071,7 +2070,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "この３人は一回立ち止まっていれば<br>HOMEに居られたのかもしれない<br>もし一回押していれば・・・",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "These 3 numbers might have stayed<br>at HOME if they had stopped once.<br>If only you had pressed them once..."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2082,7 +2081,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "じゃあさっそく解いてみよう<br>真ん中の私は誰と誰の間に行けばいいと思う",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Now, let's solve it right away.<br>Between which two numbers<br>do you think I in the center should go?"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2094,7 +2093,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "１２３６９８７４・・・",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "1 2 3 6 9 8 7 4 ..."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2105,7 +2104,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "解ったら<br>そこに行くための数字を押してくれる<br>一回押したらNEXTを押してね",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Once you figure it out,<br>please press the number to get me there.<br>Once you've pressed it, tap NEXT."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2123,7 +2122,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "次は「３」が真ん中にいるけど<br>あの数字の順番から考えれば<br>解るよね？",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Next, \"3\" is in the center, but<br>if you think of the number order,<br>you can easily figure it out, right?"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2135,8 +2134,8 @@ const hintData = [
 	{ 
         target: "#p5",
         message: {
-            ja: "押してみよう！<br>一回押したらNEXTを押してね",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "さあ、押してみよう！<br>一回押したらNEXTを押してね",
+            en: "Now, go ahead and press it!<br>Once you've pressed it, tap NEXT."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2153,8 +2152,8 @@ const hintData = [
 	{ 
         target: "#p5",
         message: {
-            ja: "よく私たちの並びを見てみて<br>",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "よく私たちの並びを見てみて",
+            en: "Take a close look <br>at how we are arranged."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2166,7 +2165,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "HOMEにいる「５」を中心に<br>１２３６９８７４・・・<br>あの並びが完成してるよね",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Centered around \"5\" at HOME,<br>1, 2, 3, 6, 9, 8, 7, 4...<br>that sequence is complete, right?"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2177,7 +2176,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "もう押すのはあの数字だよ<br>一回押したらNEXTを押してね",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Now, the number to press is that one.<br>Once you've pressed it, tap NEXT."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2195,7 +2194,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "どうかな？<br>解き方は解ってきたかな？",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "How about it?<br>Are you starting to see how to solve it?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2207,7 +2206,7 @@ const hintData = [
         target: "#p8",
         message: {
             ja: "何だか解ってきた気がするな",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "I feel like I'm starting to get it now."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2218,7 +2217,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "みんなが解けるようになって<br>パズルを楽しんでくれたら<br>私もうれしいよ",
-            en: "Tap the center '5'!<br>The panel you tap stays still."
+            en: "If everyone can solve it <br>and enjoy the puzzle,<br>I'll be happy too."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2229,7 +2228,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "ちなみにさっきのこの問題<br>答えは数字を６２５と押したけど<br>いくつか別解が存在する",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "By the way, for this puzzle just now, <br>we tapped the numbers 6, 2, and 5,<br>but there are several other solutions."
         },
         pos: { x: 0, y: 500 },
         radius: 180,
@@ -2241,7 +2240,7 @@ const hintData = [
         target: "#p5",
         message: {
             ja: "面白そうだから<br>もっとそれについて<br>研究しようと思ってるよ",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "Since it looks so interesting,<br>I'm thinking of exploring<br>more about it."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2252,8 +2251,8 @@ const hintData = [
 	{ 
         target: "#p9",
         message: {
-            ja: "せっかく話を聞いてくれたんだ<br>ここので話は少し内緒にして<br>誰かと早解き勝負でもしてみたら？",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "せっかく話を聞いてくれたんだ<br>ここでの話は少し内緒にして<br>誰かと早解き勝負でもしてみたら？",
+            en: "Since you've been such a great listener,<br>keep what we discussed a little secret<br>and challenge someone to a speed-solve!"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2264,8 +2263,8 @@ const hintData = [
 	{ 
         target: "#p9",
         message: {
-            ja: "<br>きっと勝てると思うよ",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "きっと勝てると思うよ",
+            en: "I'm sure you can win!"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2276,7 +2275,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "そしたらここでの話を伝えてほしい<br>私の望みはより多くの人に<br>このパズルを楽しんでもらうことだから",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            en: "If you do, please share this secret,<br>because my wish is for more people<br>to enjoy this puzzle."
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2286,8 +2285,8 @@ const hintData = [
 	{
 	target: "#p9",
         message: {
-            ja: "じゃあまた<br>いっしょに頭を回転させよう",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "話はここまでかな<br>じゃあ次はパズルのなかで<br>いっしょに頭を回そうじゃないか！",
+            en: "That's all for our chat, I guess.<br>So next, inside the puzzle,<br>let's spin our gears together!"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
@@ -2297,8 +2296,8 @@ const hintData = [
 { 
         target: "#p5",
         message: {
-            ja: "・・・・",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "",
+            en: ""
         },
         pos: { x: 0, y: 600 },
         radius: 180,
@@ -2308,16 +2307,26 @@ const hintData = [
 	{ 
         target: "#p5",
         message: {
-            ja: "",
-            en: "Tap the center '5'!<br>The panel you tap stays still.<br>Once you've pressed it, tap NEXT."
+            ja: "本アプリでは以下の素材を使用しています<br>「しゅわしゅわハニーレモン・・・350ml」<br>作曲：しゃろう (@shlllllw)<br>https://x.com/shlllllw",
+            en: "This app uses the following assets:<br>\"Shuwashuwa Honey Lemon... 350ml\"<br>(Fizzy Honey Lemon Soda)<br>Composed by Sharou (@shlllllw)<br>https://x.com/shlllllw"
         },
         pos: { x: 0, y: 600 },
         radius: 180,
         boxWidth: 340,
         allow: []
     },
-
-
+	
+{ 
+        target: "#p5",
+        message: {
+            ja: "数字キャラクターイラスト<br>IllustCute（DESIGNALIKIE）<br>https://illustcute.com/",
+            en: "Number Character Illustrations<br>by IllustCute (DESIGNALIKIE)<br>https://illustcute.com/"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
 
 
 	
