@@ -3649,6 +3649,11 @@ async function startChallengeProcess() {
             // 挑戦状発行！
             generateChallengeOrResponse(selectedSteps, boardStr, clearTime);
 	updateHyouji(`${clearTime}s `, "default");
+
+	// =========================================================
+    isFromChallenge = false;
+    challengeOriginalTime = null;
+    // =========================================================
         }
     }
 
@@ -4087,6 +4092,15 @@ $(".lang-btn").on("click", function() {
         if (isAnimating) return;
 	if (isLocked) unlockSystem(); // ロック解除
         playSnd('click');
+
+	if (isFromChallenge) {
+        isFromChallenge = false;
+        challengeOriginalTime = null;
+        
+        // 💡 画面の「#tebo」に表示されている文字列をそのまま数字として吸い上げる！
+        // これにより、画面の表示と裏の変数のズレが完璧にゼロになります。
+        modeMoves = parseInt($("#tebo").text(), 10) || 0; 
+    }
         isComboMode = !isComboMode;
         $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -4136,6 +4150,14 @@ $(".lang-btn").on("click", function() {
         $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
     }
         playSnd('click');
+	if (isFromChallenge) {
+        isFromChallenge = false;
+        challengeOriginalTime = null;
+        
+        // 💡 画面の「#tebo」に表示されている文字列をそのまま数字として吸い上げる！
+        // これにより、画面の表示と裏の変数のズレが完璧にゼロになります。
+        modeMoves = parseInt($("#tebo").text(), 10) || 0; 
+    }
 	hasPressedTarget = true;
         selectedSteps = modeMoves; 
         inputBuffer = [];
