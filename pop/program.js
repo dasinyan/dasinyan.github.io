@@ -57,6 +57,17 @@ const gapPos = [
     (PANEL_SIZE * 2 + GAP + GAP / 2)            // 215px（2つ目の隙間）
 ];
 
+// --- 状態管理エリアへ追加する新規変数 ---
+let comboStartTime = 0;      // COMBOモードの計測開始タイムスタンプ
+let usedCheatFlag = false;     // PEEKや禁断の果実（カンニング）を使ったかのフラグ
+let isComboTiming = false;    // 現在COMBOモードでタイム計測中かどうかのフラグ
+
+
+// --- 状態管理エリアに新しく追加する変数 ---
+let challengeOriginalTime = null; // 挑戦状の主の記録（比較用）
+let isFromChallenge = false;       // 誰かの挑戦状から起動されたかのフラグ
+
+
 // 🌟 あなたの設計通り、完全に16箇所で完結するマスター配列
 const ARROW_POSITIONS = [
     // --- 縦・横の直線的な隙間（12箇所：0 〜 11） ---
@@ -224,7 +235,7 @@ let danceGhosts = [];
 // 関数の外（ファイルの上のほう）で宣言だけしておく
 let danceAudio = null;
 
-let currentLang = 'en';
+let currentLang = (navigator.language && navigator.language.startsWith('ja')) ? 'ja' : 'en';
 
 // --- チュートリアル用のデータ管理 ---
     let tutorialStep = 0; // 現在どのステップか (0番目からスタート)
@@ -2296,8 +2307,8 @@ const hintData = [
 { 
         target: "#p5",
         message: {
-            ja: "",
-            en: ""
+            ja: "数字たち「いっぱい遊んでね」",
+            en: "Numbers said,\"Play with us a lot!\""
         },
         pos: { x: 0, y: 600 },
         radius: 180,
@@ -3087,7 +3098,7 @@ if (typeof step.onStepStart === "function") {
     });
 
     // 5. 操作制限の適用
-    setTutorialLock(step.allow);
+    setTutorialLock(step.allow); //kkkkkk
 }
 // チュートリアル用の操作制限関数
 function setTutorialLock(allowList) {
@@ -3624,6 +3635,23 @@ async function startChallengeProcess() {
                 updateHyouji("✨ HOME ✨", "success");
             }
 
+	if (isComboTiming) {
+        isComboTiming = false; // 計測終了
+
+        // カンニングしていない場合のみ挑戦状を発行！
+        if (!usedCheatFlag) {
+            let comboEndTime = performance.now();
+            let clearTime = ((comboEndTime - comboStartTime) / 1000).toFixed(2);
+            
+            // SETした瞬間の9桁の盤面文字列（例: savedState.join("") など）
+            let boardStr = savedState.join(""); 
+            
+            // 挑戦状発行！
+            generateChallengeOrResponse(selectedSteps, boardStr, clearTime);
+	updateHyouji(`${clearTime}s `, "default");
+        }
+    }
+
             // 2. 画像・アニメーション司令官：ランダム画像選別 ＆ キャラ内部の無限ループ開始
             refreshPanelsExt("win");
             
@@ -3750,6 +3778,148 @@ function openTutorialSelector(type) {
     $("#tutorial-overlay").css("display", "flex").hide().fadeIn(200);
 }
 
+// 🌟 【世界進出・短文化ローカライズ版】挑戦状・勝敗結果生成関数
+function generateChallengeOrResponse(moves, boardStr, myTime) {
+    const basePageUrl = window.location.origin + window.location.pathname;
+    let outputText = "";
+
+    // 言語変数のチェック（未定義なら 'ja' をデフォルトに）
+    const lang = (typeof currentLang !== "undefined") ? currentLang : "ja"; 
+
+    if (isFromChallenge && challengeOriginalTime !== null) {
+        // =========================================================
+        // 【A: 誰かの挑戦状に挑んでクリアした場合】
+        // =========================================================
+        const diff = (challengeOriginalTime - parseFloat(myTime)).toFixed(2);
+        let resultLine = "";
+        let bestTime = challengeOriginalTime;
+
+        if (parseFloat(myTime) < challengeOriginalTime) {
+            bestTime = parseFloat(myTime); 
+            resultLine = (lang === "ja") 
+                ? `あなたの勝ち！（相手より ${diff}秒 早い！）`
+                : `You Win! (${diff}s faster!)`;
+        } else if (parseFloat(myTime) > challengeOriginalTime) {
+            bestTime = challengeOriginalTime;
+            resultLine = (lang === "ja")
+                ? `残念！（相手より ${Math.abs(diff)}秒 遅い…）`
+                : `You Lose... (${Math.abs(diff)}s slower...)`;
+        } else {
+            bestTime = challengeOriginalTime;
+            resultLine = (lang === "ja") ? `奇跡！` : `Miracle!`;
+        }
+
+        const responseChallengeUrl = `${basePageUrl}?m=combo&d=${moves}&b=${boardStr}&t=${bestTime}`;
+
+        if (lang === "ja") {
+            outputText = 
+`【Cyclogic 挑戦状・対戦結果】
+難易度: ${moves}手 の勝負！
+盤面: [${boardStr}]
+
+目標タイム: ${challengeOriginalTime}秒
+記録: ${myTime}秒
+
+結果 ⇒ ${resultLine}
+
+参戦してみる？【最速記録：${bestTime}秒】
+${responseChallengeUrl}`;
+        } else {
+            outputText = 
+`【Cyclogic Challenge Result】
+Difficulty: ${moves} steps / First-take
+Board: [${boardStr}]
+
+Target: ${challengeOriginalTime}s
+Record: ${myTime}s
+
+Result => ${resultLine}
+
+Want to join? [Best Record: ${bestTime}s]
+${responseChallengeUrl}`;
+        }
+
+    } else {
+        // =========================================================
+        // 【B: 自分で通常COMBOをクリアして、新しく最初の挑戦状を発行する場合】
+        // =========================================================
+        const challengeUrl = `${basePageUrl}?m=combo&d=${moves}&b=${boardStr}&t=${myTime}`;
+        
+        if (lang === "ja") {
+            outputText = 
+`【Cyclogicからの挑戦状】
+（難易度: ${moves}手）をクリア！
+盤面: [${boardStr}]
+タイム: ${myTime}秒
+
+この記録を越せるかい！？
+ここから勝負！
+${challengeUrl}`;
+        } else {
+            outputText = 
+`【Challenge from Cyclogic】
+Cleared! (Difficulty: ${moves} steps)
+Board: [${boardStr}]
+Time: ${myTime}s
+
+Can you beat this record?!
+Smash your attempt here!
+${challengeUrl}`;
+        }
+    }
+
+    // クリップボードへの書き込みを実行
+    navigator.clipboard.writeText(outputText)
+        .then(() => {
+            console.log(`クリップボードへのコピーが成功しました！ (${lang})`);
+        })
+        .catch(err => console.error("コピー失敗: ", err));
+}
+//  URLパラメータを解析して挑戦状盤面をセットアップする関数
+function checkChallengeURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('m');
+    const digits = urlParams.get('b');
+    const steps = urlParams.get('d');
+    const originalTime = urlParams.get('t');
+
+    // パラメータが揃っている、かつCOMBOモードである場合
+    if (mode === 'combo' && digits && digits.length === 9 && steps) {
+        isComboMode = true;
+        isFromChallenge = true;
+        selectedSteps = parseInt(steps, 10);
+        challengeOriginalTime = parseFloat(originalTime);
+
+        // 9桁の文字列から盤面（panelState）を復元
+        panelState = digits.split('').map(Number);
+        panelState.forEach((n, i) => posMap[n - 1] = i);
+
+        // 別解に対応するため、答えの手順配列は空にする（盤面の一致のみでクリア判定するため）
+        currentAnswer = []; 
+
+        // UI表示をコンボモード・指定手数に強制書き換え
+        updateUIState(true);
+        updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+        $("#input-mode").text("COMBO").addClass("mode-active");
+        $("#tebo").text(selectedSteps);
+
+        // RESETボタン等でこの初期盤面に戻れるよう、savedStateにも記憶
+        savedState = [...panelState];
+        savedAnswer = [...currentAnswer];
+        savedSelectedSteps = selectedSteps;
+        savedIsComboMode = isComboMode;
+
+        // 盤面描画のリフレッシュ
+        refreshPanelsExt("normal");
+
+        // 💡 【重要】画面が出現した瞬間からタイマーを即座に始動！
+        comboStartTime = performance.now();
+        usedCheatFlag = false;
+        isComboTiming = true;
+
+        console.log(`【挑戦状ロード成功】目標タイム: ${challengeOriginalTime}秒`);
+    }
+}	
     // --- イベント登録 ---
 // NEXTボタンをクリックした時の挙動
 $(document).on("click", "#tutorial-next-btn", function() {
@@ -3991,6 +4161,15 @@ $(".lang-btn").on("click", function() {
         savedAnswer = [...currentAnswer];
         savedSelectedSteps = selectedSteps;
         savedIsComboMode = isComboMode;
+
+	if (isComboMode && selectedSteps > 0) { 
+        comboStartTime = performance.now(); // タイマー始動！
+        usedCheatFlag = false;               // カンニングフラグをリセット
+        isComboTiming = true;                // 計測中フラグをON
+    } else {
+        // COMBOモードではない、または手数0（HOME状態）ならタイマーは動かさない
+        isComboTiming = false;
+    }
         refreshPanelsExt("normal");
     });
 
@@ -4028,6 +4207,11 @@ $(".lang-btn").on("click", function() {
 	if (isDancing) {
         abortDance();
     }
+	if (isComboMode && isComboTiming) {
+        usedCheatFlag = true;
+        // 💡 必要に応じて、タイマー表示用の要素のテキストを "NO TIME" に書き換えてください
+        // $("#timer-display").text("NO TIME"); 
+    }
         if (currentAnswer.length === 0 || isAnimating) return;
         $(this).text(`FIRST: ${currentAnswer[0]}`);
         clearTimeout(peekTimer);
@@ -4038,10 +4222,17 @@ $(".lang-btn").on("click", function() {
 	if (isDancing) {
         abortDance();
     }
+	if (isComboMode && isComboTiming) {
+        usedCheatFlag = true;
+        // 💡 必要に応じて、タイマー表示用の要素のテキストを "NO TIME" に書き換えてください
+        // $("#timer-display").text("NO TIME"); 
+    }
         if (currentAnswer.length === 0 || isAnimating) return;
         $(this).text(currentAnswer.join(" - "));
         setTimeout(() => { $(this).text("Forbidden fruit"); }, 3000);
     });
 
     refreshPanelsExt("normal");
+
+	checkChallengeURL();
 });
