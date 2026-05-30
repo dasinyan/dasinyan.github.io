@@ -3907,6 +3907,7 @@ function checkChallengeURL() {
         updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
         $("#input-mode").text("COMBO").addClass("mode-active");
         $("#tebo").text(selectedSteps);
+	modeMoves = selectedSteps;
 
         // RESETボタン等でこの初期盤面に戻れるよう、savedStateにも記憶
         savedState = [...panelState];
