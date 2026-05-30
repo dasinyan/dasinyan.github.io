@@ -4019,6 +4019,12 @@ $(".lang-btn").on("click", function() {
 
         if (isAnimating) return;
         playSnd('click');
+	if (isFromChallenge) {
+        isFromChallenge = false;
+        challengeOriginalTime = null;       
+        
+    }
+
         const id = $(this).attr("id");
 
         if (id === "mode-select") {
@@ -4123,6 +4129,12 @@ $(".lang-btn").on("click", function() {
         $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
     }
         playSnd('click');
+	if (isFromChallenge) {
+        isFromChallenge = false;
+        challengeOriginalTime = null;       
+        
+    }
+
         modeMoves = (modeMoves + 1) % 7;
         $(this).text(modeMoves);
         selectedSteps = modeMoves; 
