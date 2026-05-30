@@ -4096,11 +4096,8 @@ $(".lang-btn").on("click", function() {
 
 	if (isFromChallenge) {
         isFromChallenge = false;
-        challengeOriginalTime = null;
+        challengeOriginalTime = null;       
         
-        // 💡 画面の「#tebo」に表示されている文字列をそのまま数字として吸い上げる！
-        // これにより、画面の表示と裏の変数のズレが完璧にゼロになります。
-        modeMoves = parseInt($("#tebo").text(), 10) || 0; 
     }
         isComboMode = !isComboMode;
         $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
@@ -4153,11 +4150,8 @@ $(".lang-btn").on("click", function() {
         playSnd('click');
 	if (isFromChallenge) {
         isFromChallenge = false;
-        challengeOriginalTime = null;
+        challengeOriginalTime = null;        
         
-        // 💡 画面の「#tebo」に表示されている文字列をそのまま数字として吸い上げる！
-        // これにより、画面の表示と裏の変数のズレが完璧にゼロになります。
-        modeMoves = parseInt($("#tebo").text(), 10) || 0; 
     }
 	hasPressedTarget = true;
         selectedSteps = modeMoves; 
