@@ -855,8 +855,32 @@ const tutorialData = [
         pos: { x: 0, y: 250 },
         radius: 65,
         boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "PEEKやFORBIDDEN FRUITを押さずに<br>COMBOの問題を解いた時に<br>クリアタイムが表示されるよ",
+            en: "If you solve a COMBO puzzle<br>without using PEEK or FORBIDDEN FRUIT,<br>your clear time will be displayed!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
         allow: []
     },
+	{ 
+        target: "#p1",
+        message: {
+            ja: "あとクリップボードに<br>同じ問題に挑戦するための<br>URLが発行されるから<br>友達に挑戦状として送っても面白いかもね",
+            en: "Also, a URL to challenge the exact same puzzle<br>will be copied to your clipboard.<br>It might be fun to send it to your friends<br>as a challenge code!"
+        },
+        pos: { x: 0, y: 250 },
+        radius: 65,
+        boxWidth: 340,
+        allow: []
+    },
+
 	{ 
         target: "#p1",
         message: {
@@ -3903,7 +3927,7 @@ function checkChallengeURL() {
         currentAnswer = []; 
 
         // UI表示をコンボモード・指定手数に強制書き換え
-        updateUIState(true);
+        updateUIState(false);
         updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
         $("#input-mode").text("COMBO").addClass("mode-active");
         $("#tebo").text(selectedSteps);
