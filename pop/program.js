@@ -429,6 +429,53 @@ const tutorialData = [
         allow: []
     },
 	{ 
+        target: "#p5",
+        message: {
+            ja: "試しにやってみよう！",
+            en: "Let's give it a try!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: []
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "まずは数字の６を押して",
+            en: "First, press the number 6!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p3"],
+	boardState: [3, 8, 6, 2, 5, 9, 1, 4, 7]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "次に数字の９を押そう",
+            en: "Next, press the number 9!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: ["#p9"],
+	boardState: [2, 3, 6, 1, 8, 5, 4, 7, 9]
+    },
+	{ 
+        target: "#p5",
+        message: {
+            ja: "みんながHOMEに戻って<br>マスが体と同じ色になったでしょ！<br>これがこのパズルのゴールだよ！",
+            en: "Look, everyone is BACK TO HOME<br>and the spaces match our colors!<br>This is the ultimate goal of the puzzle!"
+        },
+        pos: { x: 0, y: 500 },
+        radius: 180,
+        boxWidth: 340,
+        allow: [],
+	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+	{ 
         target: "#tebo",
         message: {
             ja: "このボタンを押すと<br>表示されてる数字が<br>０～６で入れ替わるよ",
@@ -485,34 +532,7 @@ const tutorialData = [
         boxWidth: 340,
         allow: []
     },
-	{ 
-        target: "#p5",
-        message: {
-            ja: "何度かSETを押して観察してみて",
-            en: "Press SET a few times<br>and watch closely<br>to see what happens!"
-        },
-        pos: { x: 0, y: 600 },
-        radius: 180,
-        boxWidth: 340,
-        allow: ["#sebo"],
-	check: function() {
-          if (!hasPressedTarget) {
-             return false; 
-          }
-          return true; // 押されていれば NEXT を許可
-        }
-    },
-	{ 
-        target: "#p5",
-        message: {
-            ja: "気が付いたかもしれないけど<br>僕たちが自分のHOMEにいると<br>マスが体と同じ色になるよ",
-            en: "You might have noticed,<br>when we are in our HOME,<br>the slots match our color!"
-        },
-        pos: { x: 0, y: 600 },
-        radius: 180,
-        boxWidth: 340,
-        allow: ["#sebo"]
-    },
+	
 	{ 
         target: "#tebo",
         message: {
@@ -644,44 +664,53 @@ const tutorialData = [
         boxWidth: 340,
         allow: []
     },
-	{ 
+		{ 
         target: "#sebo",
         message: {
-            ja: "SETを押してみよう",
-            en: "Let\'s try pressing<br>the SET button!"
+            ja: "このSETボタンを押してみて",
+            en: "Give this SET button a push!"
         },
-        pos: { x: 0, y:600 },
+        pos: { x: 0, y: 600 },
         radius: 65,
         boxWidth: 340,
         allow: ["#sebo"],
-	
-        check: function() {
+	check: function() {
           if (!hasPressedTarget) {
-             return false; 
+         
+              return false; 
           }
           return true; // 押されていれば NEXT を許可
         }
-      	
     },
+
 
 	{ 
         target: "#p5",
         message: {
-            ja: "ちょっと難しいから<br>なんでもいいから数字を５回<br>試しに押してみよう",
-            en: "It might look tricky, so<br>just press any numbers<br>5 times to try it out!"
+            ja: "試しに５回<br>好きな数字を押してみよう",
+            en: "Go ahead and tap any numbers<br>5 times just to try it out!"
         },
-        pos: { x: 0, y: 600 },
+        pos: { x: 0, y: 500 },
         radius: 180,
         boxWidth: 340,
-        allow: [".panel"]
+        allow: [".panel"],
+	check: function() {
+          if (!hasPressedTarget) {
+         
+              return false; 
+          }
+          return true; // 押されていれば NEXT を許可
+        }
+
     },
+	
 	{ 
         target: "#p5",
         message: {
             ja: "基本的な操作方法は判ってくれたかな<br>難易度は一つ上がるだけで<br>大きく難しくなるから<br>１から徐々に上げていこう",
             en: "Got the basic controls?<br>It gets way harder with<br>just +1 difficulty, so let\'s<br>start slow from \"1\"!"
         },
-        pos: { x: 0, y: 600 },
+        pos: { x: 0, y: 500 },
         radius: 180,
         boxWidth: 340,
         allow: []
@@ -692,7 +721,7 @@ const tutorialData = [
             ja: "だんだん解けるようになって<br>COMBOの３，４が解けるようになったら<br>ディリーチャレンジに挑戦しよう",
             en: "Once you can solve<br>COMBO level 3 or 4,<br>try the Daily Challenge!"
         },
-        pos: { x: 0, y: 600 },
+        pos: { x: 0, y: 500 },
         radius: 180,
         boxWidth: 340,
         allow: []
@@ -776,65 +805,7 @@ const tutorialData = [
         allow: []	
 
     },
-	{ 
-        target: "#input-mode",
-        message: {
-            ja: "COMBOを選んで・・・",
-            en: "Select COMBO and..."
-        },
-        pos: { x: 0, y: 600 },
-        radius: 65,
-        boxWidth: 340,
-        allow: ["#input-mode"],
-	check: function() {
-        // テキストをトリミング（前後の空白削除）して比較
-        return $("#input-mode").text().trim() === "COMBO";
-   　　 }
-},
-
-	{ 
-        target: "#tebo",
-        message: {
-            ja: "ここを６にして・・・",
-            en: "Set this to 6 and..."
-        },
-        pos: { x: 0, y: 600 },
-        radius: 65,
-        boxWidth: 340,
-        allow: ["#tebo"],
-	check: function() {
-        // #teboのテキストを数字に変換して、1と一致するか判定
-        return parseInt($("#tebo").text()) === 6;
-	}
-    },
-	{ 
-        target: "#sebo",
-        message: {
-            ja: "SETを押してみて",
-            en: "Try pressing SET!"
-        },
-        pos: { x: 0, y: 600 },
-        radius: 65,
-        boxWidth: 340,
-        allow: ["#sebo"],
-	check: function() {
-          if (!hasPressedTarget) {
-             return false; 
-          }
-          return true; // 押されていれば NEXT を許可
-        }
-　　 },
-	{ 
-        target: "#p5",
-        message: {
-            ja: "６回でHOMEのCOMBO入力<br>もしもこれがクリア出来たら<br>僕たちが特別なダンスを披露するね",
-            en: "A 6-step HOME COMBO!<br>If you can clear this,<br>we'll perform<br>a special dance for you!"
-        },
-        pos: { x: 0, y: 600 },
-        radius: 180,
-        boxWidth: 340,
-        allow: []
-    },
+	
 	{ 
         target: "#peek-btn",
         message: {
@@ -950,7 +921,7 @@ const hintData = [
         target: "#p9",
         message: {
             ja: "おや！見ない顔だね<br>君が「１」が話してた<br>新しい友だちかな",
-            en: "Oh, hello there! A new face.<br>Are you the new friend<br>that \"1\"' was telling me about?"
+            en: "Oh, hello there! A new face.<br>Are you the new friend<br>that \"1\" was telling me about?"
         },
         pos: { x: 0, y: 500 },
         radius: 65,
