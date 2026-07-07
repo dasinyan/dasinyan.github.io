@@ -25,12 +25,18 @@ $(function() {
 
     let modeMoves = 0;       
     let isComboMode = false; 
+
+	let isFreeMode = false;
+	let historyStack = [];
     let inputBuffer = [];    
     let selectedSteps = 0; 
     let dailyTargetSteps = 3; 
     let currentDayOffset = 0; 
 	let isLocked = false; // クリア後の演出用ロック
 	let winAnims = []; // 祝福アニメーションを保持する配列
+
+	let longPressTimer = null;   // 長押し時間を測るタイマー
+let isLongPressed = false;   // 長押しが成立したかどうかのフラグ
 
 // 各モードの計測が走っているか管理するフラグ
 let isTimerActive = { 3: false, 4: false };
@@ -291,93 +297,26 @@ const tutorialData = [
 	{ 
         target: "#p5",
         message: {
-            ja: "ちょっとみんな説明中だから<br>飛ばないでじっとしてて・・・",
-            en: "Whoa, hold on everyone!<br>I'm trying to explain!<br>No jumping yet, just stay right there..."
+            ja: "数字を長押しすると<br>みんなが動く方向に矢印がでるよ<br>いつでも確認してね",
+            en: "If you press and hold a number,<br>arrows will show you where everyone moves!<br>Check it out anytime!"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
         boxWidth: 340,
         allow: [".panel"]
-    },
-
-		{ 
-        target: "#p5",
-        message: {
-            ja: "やっと止まったくれた<br>みんな！ありがとね！",
-            en: "Finally, they stopped moving...<br>Thanks, everyone!"
-        },
-        pos: { x: 0, y: 500 },
-        radius: 180,
-        boxWidth: 340,
-        allow: [".panel"],
-	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-
-	// 🌟 ステップ開始時にフラグを立てる
-    onStepStart: function() {
-        isArrowExperimentMode = true;
-    }
-    },
+    },	    
 	{ 
         target: "#p5",
         message: {
-            ja: "数字を押すと矢印が見えるでしょ<br>押された数字は動かずに<br>他のみんなが矢印の向きに跳んでいくんだ",
-            en: "See the arrows when you tap a number?<br>The number you tapped stays in place,<br>and everyone else jumps in that direction!"
+            ja: "じゃあ、話を進めるよ",
+            en: "Alright, let's keep moving!"
         },
         pos: { x: 0, y: 500 },
         radius: 180,
         boxWidth: 340,
-        allow: [".panel"],
-	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-
-	// 🌟 ステップ開始時にフラグを立てる
-    onStepStart: function() {
-        isArrowExperimentMode = true;
-    }
+        allow: [".panel"]	
     },
-	
-{ 
-        target: "#p5",
-        message: {
-            ja: "みんなが止まってくれてる間に<br>解るまで押してみてね",
-            en: "While everyone is staying still,<br>keep tapping until you get how it works!"
-        },
-        pos: { x: 0, y: 500 },
-        radius: 180,
-        boxWidth: 340,
-        allow: [".panel"],
-	boardState: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-
-	// 🌟 ステップ開始時にフラグを立てる
-    onStepStart: function() {
-        isArrowExperimentMode = true;
-    }
-    },
-
 	{ 
-        target: "#p5",
-        message: {
-            ja: "解ってくれたかな？<br>何回か押して確認してみて<br>OKなら話を進めるよ",
-            en: "Do you get it now?<br>Tap a few more times to be sure.<br>Ready to move on?"
-        },
-        pos: { x: 0, y: 500 },
-        radius: 180,
-        boxWidth: 340,
-        allow: [".panel"],
-	// 🌟 次のステップ開始時（＝前のステップが進行した時）にフラグを折り、矢印を消す
-        onStepStart: function() {
-        isArrowExperimentMode = false;
-        clearTutorialArrows(); // 矢印を消す関数を呼ぶ
-        },
-	check: function() {
-          if (!hasPressedTarget) {
-         
-              return false; 
-          }
-          return true; // 押されていれば NEXT を許可
-        }
-    },
-
-		{ 
         target: "#tebo",
         message: {
             ja: "このボタンが「０」の時に",
@@ -580,8 +519,8 @@ const tutorialData = [
 	{ 
         target: "#input-mode",
         message: {
-            ja: "これは入力の仕方を変えるボタンで<br>押すとSINGLEとCOMBOが選べるよ",
-            en: "This button changes<br>the input mode to select<br>SINGLE or COMBO!"
+            ja: "これは入力の仕方を変えるボタンで<br>押すとSINGLEとFREEとCOMBOが選べるよ",
+            en: "This button changes how you input your moves.<br>Tap it to choose between SINGLE, FREE, and COMBO!"
         },
         pos: { x: 0, y: 600 },
         radius: 65,
@@ -598,7 +537,7 @@ const tutorialData = [
         radius: 65,
         boxWidth: 340,
         allow: ["#input-mode"]
-    },
+    },    
 	{ 
         target: "#input-mode",
         message: {
@@ -610,7 +549,17 @@ const tutorialData = [
         boxWidth: 340,
         allow: ["#input-mode"]
     },
-
+    { 
+        target: "#input-mode",
+        message: {
+            ja: "FREEは回数を無視して<br>HOMEを目指すのに使えるよ",
+            en: "In FREE, you can forget about move limits<br>and just focus on reaching HOME!"
+        },
+        pos: { x: 0, y: 600 },
+        radius: 65,
+        boxWidth: 340,
+        allow: ["#input-mode"]
+    },
 	{ 
         target: "#input-mode",
         message: {
@@ -3507,7 +3456,7 @@ async function startChallengeProcess() {
         if (isHome && !isComboMode) {
             updateHyouji("✨ HOME ✨", "success");
             playSnd('complete', true);
-        } else if (!isComboMode) {
+        } else if (!isComboMode && isFreeMode) {
             updateHyouji("Let's Try", "default");
         }
     }
@@ -4045,45 +3994,116 @@ $(".lang-btn").on("click", function() {
 	}
     });
 
-    $('.panel').on('click', function() {
+// =================================================================
+    // 🌟【真の決定版】長押しガイド ⇄ 通常クリック 完全セパレートシステム
+    // =================================================================
 
-	hasPressedTarget = true;
-        // 1. ガード：アニメーション中、またはクリア後のロック中は一切の入力を受け付けない
-        if (isAnimating || isLocked) return; 
+    // ⏱️ 1. 長押しを検知して矢印を出すイベント（PC・スマホ両対応）
+    $('.panel').on('mousedown touchstart', function(e) {
+        if (isAnimating || isLocked) return;
+        
+        // 💡 本物のフラグ：tutorialStep > 0 ならチュートリアル（またはささやき）中です
+        const isTutorialMode = (typeof tutorialStep !== 'undefined' && tutorialStep > 0);
+
+        // 【通常プレイ時のガード】FREEでなく、チュートリアルでもない場合、問題生成前なら長押しもガード
+        if (!isFreeMode && !isTutorialMode && !isChallengeMode && !isFromChallenge && currentAnswer.length === 0) return;
 
         const idx = $(".panel").index(this);
+        isLongPressed = false;
 
-	// 🌟 【ここを追加！】チュートリアルの矢印実験フラグが立っている場合
-    if (isArrowExperimentMode) {
-	
-        clearTutorialArrows(); 
-	playSnd('click');     // ３．まず古い矢印を消す
-        displayTutorialArrows(idx);   // ４．タッチされたインデックス(0~8)に応じた場所に矢印を表示する
-        return;                      // 💡 ここで処理を終了し、以下の通常移動（COMBO/SINGLE）を完全にスキップ！
-    }
+        // 500ミリ秒押し続けたら長押し成立！
+        longPressTimer = setTimeout(() => {
+            isLongPressed = true;
+            clearTutorialArrows();
+            displayTutorialArrows(idx); // 矢印を囁かせる
+            playSnd('click'); 
+        }, 500); 
+    });
 
+    // ✋ 2. 指やマウスが離れたらタイマーを止め、矢印を消すイベント
+    $('.panel').on('mouseup touchend mouseleave', function() {
+        clearTimeout(longPressTimer); // タイマーを安全に破棄
+        
+        // もし長押しが成立して矢印が出ていたなら、指を離した瞬間に優しく消してあげる
+        if (isLongPressed) {
+            clearTutorialArrows(); 
+        }
+    });
+
+    // 👆 3. 通常のクリック・回転・チュートリアル進行を司るメインイベント
+    $('.panel').on('click', function() {
+        hasPressedTarget = true;
+        if (isAnimating || isLocked) return; 
+
+        // ⭕【PCブラウザの誤爆防止】長押し成立後の「指を離した瞬間」なら、回転させずに完全終了
+        if (isLongPressed) {
+            isLongPressed = false; // 次回のためにフラグをリセット
+            return; 
+        }
+
+        const idx = $(".panel").index(this);
+        const isTutorialMode = (typeof tutorialStep !== 'undefined' && tutorialStep > 0);
+
+        // 【通常プレイ時の鉄壁ガード】問題生成前なら、これ以上進ませない
+        if (!isFreeMode && !isTutorialMode && !isChallengeMode && !isFromChallenge && currentAnswer.length === 0) return;
+
+        // --- 🤖 モードごとの回転・入力処理 ---
         if (isComboMode && selectedSteps > 0) {
-            // --- COMBO モード時の入力処理 ---
+            // --- ⭕ COMBO モード時の入力処理（既存のまま完全維持） ---
             playSnd('click');
-
             if (inputBuffer.length < selectedSteps) {
-                // タップされた位置にあるパネルの「数字」をバッファに記録
                 inputBuffer.push(panelState[idx]);
-
-                // 表示の更新（例： "1 3 - -"）
                 let disp = inputBuffer.join(" ") + " -".repeat(selectedSteps - inputBuffer.length);
                 updateHyouji(disp.trim(), "ready");
 
-                // 指定手数に達したらコンボ実行
                 if (inputBuffer.length === selectedSteps) {
                     setTimeout(executeCombo, 180);
                 }
             }
         } else {
-            // --- SINGLE モード時の通常回転 ---
+            // --- 🌟 SINGLE / FREE モード、および全てのチュートリアル（通常・数字のささやき）時の処理 ---
+
+            // 通常プレイのSINGLEモード時のみ手数制限のガードをかける
+            if (!isFreeMode && !isTutorialMode) {
+                if (inputBuffer.length >= selectedSteps) {
+                    playIncompleteVoice(); 
+                    return;
+                }
+            }
+
             playSnd('push');
+
+            // 📸 【一手戻る用の仕掛け】動く前の盤面の状態をアルバムに保存
+            historyStack.push([...panelState]);
+
+            // 画面上部（#hyouji）のテキスト出し分けとバッファ管理
+            if (isFreeMode) {
+                // FREEモード：バッファに蓄積せず、最新の1手だけを流す
+                updateHyouji(`PUSH: ${panelState[idx]}`, "ready");
+            } else if (isTutorialMode) {
+                // 🌟【大復活！】通常チュートリアル＆「数字のささやき」の時
+                // 内部バッファにしっかり数字を記録し、進行チェックへ完璧にバトンを渡す！
+                inputBuffer.push(panelState[idx]);
+            } else {
+                // 通常プレイの 新SINGLEモード
+                inputBuffer.push(panelState[idx]);
+                let displayArr = [...inputBuffer];
+                while (displayArr.length < selectedSteps) {
+                    displayArr.push("-");
+                }
+                updateHyouji(displayArr.join(" "), "ready");
+
+                if (inputBuffer.length === selectedSteps) {
+                    setTimeout(() => {
+                        const isHome = panelState.every((num, i) => num === i + 1);
+                        if (!isHome) playIncompleteVoice(); // なじられボイス！
+                    }, 300);
+                }
+            }
+
+            // 実際の回転処理を呼び出す
+            // 💡 これにより、通常プレイも、通常チュートリアルも、数字のささやきも、すべてが美しく回ります！
             rotatePanels(idx);
-            // ※ rotatePanels 内で refreshPanelsExt("normal") が呼ばれる想定です
         }
     });
 
@@ -4100,69 +4120,123 @@ $(".lang-btn").on("click", function() {
         challengeOriginalTime = null;       
         
     }
-        isComboMode = !isComboMode;
-        $(this).text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
+        if (!isComboMode && !isFreeMode) {
+            // 現在 SINGLE ➔ 次は FREE へ
+            isFreeMode = true;
+            isComboMode = false;
+        } else if (isFreeMode) {
+            // 現在 FREE ➔ 次は COMBO へ
+            isFreeMode = false;
+            isComboMode = true;
+        } else {
+            // 現在 COMBO ➔ 次は SINGLE へ
+            isFreeMode = false;
+            isComboMode = false;
+        }
+
+        // モードボタンのテキストとスタイルの更新
+        let modeText = "SINGLE";
+        if (isFreeMode) modeText = "FREE";
+        if (isComboMode) modeText = "COMBO";
+        $(this).text(modeText).css("background-color", isComboMode ? "#03a9f4" : (isFreeMode ? "#03a9f4" : "#03a9f4")); 
+        // ※お好みの色に調整してください（例: FREEは緑など）。toggleClassの代わりにcssで色変えが安全です。
+
+        // 🌟例の【BACK / RESET】の自動切り替えの1行をここに添えます！
+        $("#resebo").text(isComboMode ? "RESET" : "BACK");
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         panelState.forEach((n, i) => posMap[n - 1] = i);
         currentAnswer = [];
         updateUIState(false);
         inputBuffer = [];
-        updateHyouji(isComboMode ? (selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!") : "HOME", "default");
+	historyStack = [];
+
+        if (isComboMode) {
+            updateHyouji(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!", "default");
+        } else if (isFreeMode) {
+            updateHyouji("LET'S TRY!", "default");
+        } else {
+            // 新SINGLEモード：最初に手数のハイフン枠を出す
+            if (selectedSteps > 0) {
+                updateHyouji("- ".repeat(selectedSteps).trim(), "default");
+            } else {
+                updateHyouji("SET MOVES!", "default"); // 手数0の時はこれが出るのが正解！
+            } 
+        }
         refreshPanelsExt("normal");
     });
 
     $("#tebo").on("click", function() {
-	if (isDancing) {
-        abortDance();
-    }
+        if (isDancing) {
+            abortDance();
+        }
         if (isAnimating) return;
-	if (isLocked) unlockSystem(); // ロック解除
+        if (isLocked) unlockSystem(); // ロック解除
 
-	if (isChallengeMode) {
-        isChallengeMode = false;
-        startTime = 0;
-        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
-    }
+        if (isChallengeMode) {
+            isChallengeMode = false;
+            startTime = 0;
+            $("#input-mode").text(isComboMode ? "COMBO" : (isFreeMode ? "FREE" : "SINGLE")).removeClass("mode-active");
+        }
         playSnd('click');
-	if (isFromChallenge) {
-        isFromChallenge = false;
-        challengeOriginalTime = null;       
-        
-    }
+        if (isFromChallenge) {
+            isFromChallenge = false;
+            challengeOriginalTime = null;       
+        }
 
         modeMoves = (modeMoves + 1) % 7;
         $(this).text(modeMoves);
         selectedSteps = modeMoves; 
+        
+        // 共通の盤面リセット・アルバムお掃除（既存のまま維持）
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         panelState.forEach((n, i) => posMap[n - 1] = i);
         currentAnswer = [];
         updateUIState(false);
         inputBuffer = [];
-        updateHyouji(isComboMode && selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "HOME", "default");
+        historyStack = []; // 📸 手数が変わったのでアルバムもリセット
+
+        // 🌟【ここを修正！】現在のモードと手数（selectedSteps）に応じて、上の表示を正しく出し分ける
+        if (isComboMode) {
+            // COMBOモード：手数がセットされていれば "- - -"、0なら "SET MOVES!"
+            updateHyouji(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!", "default");
+        } else if (isFreeMode) {
+            // FREEモード：手数の制限はないので、いつでも "LET'S TRY!"
+            updateHyouji("LET'S TRY!", "default");
+        } else {
+            // 新SINGLEモード：手数がセットされていれば "- - -"、0なら "SET MOVES!"
+            if (selectedSteps > 0) {
+                updateHyouji("- ".repeat(selectedSteps).trim(), "default");
+            } else {
+                updateHyouji("SET MOVES!", "default");
+            }
+        }
+
         refreshPanelsExt("normal");
     });
 
     $("#sebo").on("click", function() {
-	if (isDancing) {
-        abortDance();
-    }
+        if (isDancing) {
+            abortDance();
+        }
         if (isAnimating) return;
-	if (isLocked) unlockSystem(); // ロック解除
+        if (isLocked) unlockSystem(); // ロック解除
 
-	if (isChallengeMode) {
-        isChallengeMode = false;
-        startTime = 0;
-        $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").removeClass("mode-active");
-    }
+        if (isChallengeMode) {
+            isChallengeMode = false;
+            startTime = 0;
+            // 🌟 モード表示の復元に FREE モードも考慮
+            $("#input-mode").text(isComboMode ? "COMBO" : (isFreeMode ? "FREE" : "SINGLE")).removeClass("mode-active");
+        }
         playSnd('click');
-	if (isFromChallenge) {
-        isFromChallenge = false;
-        challengeOriginalTime = null;        
-        
-    }
-	hasPressedTarget = true;
+        if (isFromChallenge) {
+            isFromChallenge = false;
+            challengeOriginalTime = null;       
+        }
+        hasPressedTarget = true;
         selectedSteps = modeMoves; 
         inputBuffer = [];
+        historyStack = []; // 📸 新しい問題が生成されたので、1手戻る用のアルバムも綺麗にリセット！
+        
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         panelState.forEach((n, i) => posMap[n - 1] = i);
 
@@ -4175,46 +4249,105 @@ $(".lang-btn").on("click", function() {
             }
             currentAnswer = hist.reverse();
             updateUIState(true);
-            updateHyouji(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try", isComboMode ? "ready" : "default");
+
+            // 🌟【ここを修正！】シャッフルされた瞬間のモードごとの表示を完璧にコントロールします
+            if (isComboMode) {
+                // COMBOモード：設定手数分の「- - -」を表示
+                updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+            } else if (isFreeMode) {
+                // FREEモード：問題生成されても自由研究モードなので、常に親切に "LET'S TRY!"
+                updateHyouji("LET'S TRY!", "default");
+            } else {
+                // 新SINGLEモード：設定手数分のハイフン枠「ー ー ー」を綺麗に出現させる！
+                updateHyouji("- ".repeat(selectedSteps).trim(), "default");
+            }
         } else {
-            updateHyouji("HOME", "default");
+            // 手数0（HOME状態）の時の処理
+            // 🌟 FREEモードの時は手数が0でも常に "LET'S TRY!" をキープさせます
+            updateHyouji(isFreeMode ? "LET'S TRY!" : "HOME", "default");
             updateUIState(false);
             currentAnswer = [];
         }
+
         savedState = [...panelState];
         savedAnswer = [...currentAnswer];
         savedSelectedSteps = selectedSteps;
         savedIsComboMode = isComboMode;
 
-	if (isComboMode && selectedSteps > 0) { 
-        comboStartTime = performance.now(); // タイマー始動！
-        usedCheatFlag = false;               // カンニングフラグをリセット
-        isComboTiming = true;                // 計測中フラグをON
-    } else {
-        // COMBOモードではない、または手数0（HOME状態）ならタイマーは動かさない
-        isComboTiming = false;
-    }
+        if (isComboMode && selectedSteps > 0) { 
+            comboStartTime = performance.now(); // タイマー始動！
+            usedCheatFlag = false;               // カンニングフラグをリセット
+            isComboTiming = true;                // 計測中フラグをON
+        } else {
+            isComboTiming = false;
+        }
         refreshPanelsExt("normal");
     });
 
     $("#resebo").on("click", function() {
-	if (isDancing) {
-        abortDance();
-    }
-        if (isAnimating || isChallengeMode) return;
-	if (isLocked) unlockSystem(); // ロック解除
+        if (isDancing) {
+            abortDance();
+        }
+        if (isAnimating) return;
         playSnd('click');
-        if (savedState && savedState.length > 0) {
-            panelState = [...savedState];
-            currentAnswer = [...savedAnswer];
-            selectedSteps = savedSelectedSteps;
-            isComboMode = savedIsComboMode;
+
+        if (isComboMode) {
+            // --- ⭕ COMBO モード時の挙動（既存のリセット処理を完全維持） ---
+            panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
             panelState.forEach((n, i) => posMap[n - 1] = i);
+            currentAnswer = [];
+            updateUIState(false);
             inputBuffer = [];
-            updateHyouji(isComboMode ? "- ".repeat(selectedSteps).trim() : "Let's Try", isComboMode ? "ready" : "default");
-            $("#input-mode").text(isComboMode ? "COMBO" : "SINGLE").toggleClass("mode-active", isComboMode);
-            $("#tebo").text(selectedSteps);
+            updateHyouji(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!", "default");
             refreshPanelsExt("normal");
+        } else {
+            // --- 🌟 SINGLE / FREE モード時の挙動（1手戻る BACK処理） ---
+            
+            // もしアルバム（履歴）に過去の写真が残っている場合だけ戻る処理を実行
+            if (historyStack.length > 0) {
+                
+                // もしクリア後のロック状態なら、優しくロックを解除してあげる
+                if (isLocked) {
+                    unlockSystem();
+                }
+
+                // 1. アルバムから最新の「1手前の盤面」を1枚ペラッと剥ぎ取る
+                const prevState = historyStack.pop();
+                
+                // 2. 今の盤面の数字の並びを、剥ぎ取った過去の並びで上書きする
+                panelState = [...prevState];
+                panelState.forEach((n, i) => posMap[n - 1] = i);
+
+                // 3. 画面上の入力履歴（バッファ）も1つ削る
+                inputBuffer.pop();
+
+                // 4. 画面上部（#hyouji）の文字表示を、戻った手数に合わせて再計算
+                if (isFreeMode) {
+                    // FREEモード：履歴が全部なくなったら "LET'S TRY!" に戻し、残っていればその数字を並べる
+                    if (inputBuffer.length === 0) {
+                        updateHyouji("LET'S TRY!", "default");
+                    } else {
+                        updateHyouji(inputBuffer.join(" "), "ready");
+                    }
+                } else {
+                    // 新SINGLEモード：削られた後の履歴を反映し、足りない分は「ー」で埋める（例: "5 ー ー"）
+                    const maxSteps = selectedSteps > 0 ? selectedSteps : 3;
+                    let displayArr = [...inputBuffer];
+                    while (displayArr.length < maxSteps) {
+                        displayArr.push("-");
+                    }
+                    updateHyouji(displayArr.join(" "), "ready");
+                }
+
+                // 5. 盤面のグラフィックを新しい状態（過去の並び）で再描画する
+                refreshPanelsExt("normal");
+            } else {
+                // 💡 もしこれ以上戻れない（最初期の状態）のにBACKが押された場合は、
+                // 念のため初期の表示に戻してあげる親切設計
+                if (isFreeMode) {
+                    updateHyouji("LET'S TRY!", "default");
+                }
+            }
         }
     });
 
