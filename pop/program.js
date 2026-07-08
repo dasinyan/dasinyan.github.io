@@ -4292,13 +4292,28 @@ $(".lang-btn").on("click", function() {
         playSnd('click');
 
         if (isComboMode) {
-            // --- ⭕ COMBO モード時の挙動（既存のリセット処理を完全維持） ---
-            panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            // --- ⭕ COMBO モード時の挙動（SET直後の問題盤面へ安全に巻き戻す！） ---
+            
+            // 1. もしクリア後のロック状態なら、優しくロックを解除
+            if (isLocked) {
+                unlockSystem();
+            }
+
+            // 2. アルバムに保存されていた「SET直後の初期盤面」を完璧に復元！
+            panelState = [...savedState];
             panelState.forEach((n, i) => posMap[n - 1] = i);
-            currentAnswer = [];
-            updateUIState(false);
+            
+            // 3. 正解手順も、SET直後に保存したアルバムから正しく復元！
+            currentAnswer = [...savedAnswer];
+            
+            // 4. 入力中のバッファだけを綺麗にクリアして、UIを再使用可能にする
             inputBuffer = [];
-            updateHyouji(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!", "default");
+            updateUIState(true); // 問題は残っているので、PEEKや答えを見るボタンは使える状態を維持！
+            
+            // 5. 表示を綺麗なハイフン枠（例: "- - -"）に戻す
+            updateHyouji(selectedSteps > 0 ? "- ".repeat(selectedSteps).trim() : "SET MOVES!", "ready");
+            
+            // 6. 盤面を通常顔でリフレッシュ（※タイマー処理は一切触らず、無慈悲に継続！）
             refreshPanelsExt("normal");
         } else {
             // --- 🌟 SINGLE / FREE モード時の挙動（1手戻る BACK処理） ---
