@@ -73,6 +73,15 @@ let isComboTiming = false;    // 現在COMBOモードでタイム計測中かど
 let challengeOriginalTime = null; // 挑戦状の主の記録（比較用）
 let isFromChallenge = false;       // 誰かの挑戦状から起動されたかのフラグ
 
+const DIFFICULTY_LOOP = [
+    "0", "1", "2", 
+    "3-", "3", "3+", 
+    "4-", "4", "4+", 
+    "5-", "5", "5+", 
+    "6-", "6", "6+"
+];
+let difficultyIdx = 0;
+let currentDifficultyStr = "0";
 
 // 🌟 あなたの設計通り、完全に16箇所で完結するマスター配列
 const ARROW_POSITIONS = [
@@ -437,7 +446,7 @@ const tutorialData = [
         allow: ["#tebo"],
 	check: function() {
         // #teboのテキストを数字に変換して、1と一致するか判定
-        return parseInt($("#tebo").text()) === 1;
+        return selectedSteps === 1;
 	}
     },
 	{ 
@@ -599,7 +608,7 @@ const tutorialData = [
         allow: ["#tebo"],
 	check: function() {
         // #teboのテキストを数字に変換して、1と一致するか判定
-        return parseInt($("#tebo").text()) === 5;
+        return selectedSteps === 5;
 	}
     },
 	{ 
@@ -2293,6 +2302,22 @@ const hintData = [
 
     // --- 2. 共通関数 ---
 
+
+ // 🌟 全身の同期を司る絶対守護神（共通関数）
+function setDifficulty(value) {
+    const strValue = String(value);
+    $("#tebo").text(strValue);      // UIの書き換え
+    currentDifficultyStr = strValue; // 文字列状態の保存
+    
+    selectedSteps = parseInt(strValue, 10); // 計算用の数値にクレンジング
+    modeMoves = selectedSteps;              // 既存ロジック用
+    
+    // 他の処理から書き換えられても、ループ位置を自動で同期させる
+    const foundIdx = DIFFICULTY_LOOP.indexOf(strValue);
+    if (foundIdx !== -1) {
+        difficultyIdx = foundIdx;
+    }
+}   
 // startHoneyLemonSequence()の外側に定義
 function abortDance() {
     if (!isDancing) return; 
@@ -2368,35 +2393,6 @@ function clearAllDanceEffects() {
     // 5. フラグの初期化
     isDancing = false;
     isLocked = false;
-}
-
-// ゴースト（影武者）を生成して配置する関数
-function createDanceGhosts() {
-    clearAllDanceEffects(); // 二重生成防止
-    
-    for (let i = 1; i <= 9; i++) {
-        const $panel = $(`#p${i}`);
-        const rect = $panel[0].getBoundingClientRect();
-        const num = $panel.text().trim(); // 現在の数字を取得
-
-        const $ghost = $(`<div class="frenzy-ghost"></div>`).css({
-            position: 'fixed',
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-            backgroundImage: `url(img/conum${num}_1.png)`, // まずは基本画像
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            zIndex: 10000,
-            pointerEvents: 'none'
-        }).attr('data-home', i); // どのHOMEにいるか記録
-
-        $('body').append($ghost);
-        danceGhosts.push($ghost);
-        $panel.css('visibility', 'hidden'); // 実体を隠す
-    }
 }
 
 
@@ -2953,11 +2949,11 @@ function applyTutorialStyle(step) {
 function setupTutorialState() {
     // 1. モードと歩数のリセット
     isComboMode = false;
-	modeMoves = 0;
-    selectedSteps = 0;
+	
     inputBuffer = [];
     $("#input-mode").text("SINGLE").removeClass("mode-active");
-    $("#tebo").text("0");
+    // 🌟 守護神関数で安全に手数を「0」にリセット！
+    setDifficulty("0");
 
     // 2. 盤面を初期状態（1〜9）に戻す
     panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -3328,11 +3324,11 @@ async function startChallengeProcess() {
 
     isComboMode = true; 
     isChallengeMode = true;
-    selectedSteps = currentMode; 
-    modeMoves = selectedSteps;
+    // 🌟 守護神関数で同期！ 内部の selectedSteps / modeMoves も自動的に currentMode で同期されます
+    setDifficulty(currentMode);
 
     $("#input-mode").text("DAILY").addClass("mode-active"); 
-    $("#tebo").text(modeMoves);
+    
     
     playSnd('click');
     updateUIState(false); 
@@ -3591,7 +3587,7 @@ async function startChallengeProcess() {
             let boardStr = savedState.join(""); 
             
             // 挑戦状発行！
-            generateChallengeOrResponse(selectedSteps, boardStr, clearTime);
+            generateChallengeOrResponse(currentDifficultyStr, boardStr, clearTime);
 	updateHyouji(`${clearTime}s `, "default");
 
 	// =========================================================
@@ -3829,14 +3825,19 @@ function checkChallengeURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('m');
     const digits = urlParams.get('b');
-    const steps = urlParams.get('d');
+    // 🌟 steps を let に変更し、半角スペースに化けたプラスを「+」へ安全に復元します！
+    let steps = urlParams.get('d');
+    if (steps) {
+        steps = steps.replace(/ /g, "+");
+    }
     const originalTime = urlParams.get('t');
 
     // パラメータが揃っている、かつCOMBOモードである場合
     if (mode === 'combo' && digits && digits.length === 9 && steps) {
         isComboMode = true;
         isFromChallenge = true;
-        selectedSteps = parseInt(steps, 10);
+        // 🌟 ここで steps ("3+" や "4-" など) を直接守護神関数に放り込む！
+        setDifficulty(steps);
         challengeOriginalTime = parseFloat(originalTime);
 
         // 9桁の文字列から盤面（panelState）を復元
@@ -3850,8 +3851,8 @@ function checkChallengeURL() {
         updateUIState(false);
         updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
         $("#input-mode").text("COMBO").addClass("mode-active");
-        $("#tebo").text(selectedSteps);
-	modeMoves = selectedSteps;
+        // 🌟 ここで steps（"3+" などの文字列）を守護神関数に流し込むだけにします！
+        setDifficulty(steps);
 
         // RESETボタン等でこの初期盤面に戻れるよう、savedStateにも記憶
         savedState = [...panelState];
@@ -4183,11 +4184,11 @@ $(".lang-btn").on("click", function() {
             challengeOriginalTime = null;       
         }
 
-        modeMoves = (modeMoves + 1) % 7;
-        $(this).text(modeMoves);
-        selectedSteps = modeMoves; 
+        // 🌟 難易度ループを回して、守護神関数で同期させる！
+        difficultyIdx = (difficultyIdx + 1) % DIFFICULTY_LOOP.length;
+        setDifficulty(DIFFICULTY_LOOP[difficultyIdx]);
         
-        // 共通の盤面リセット・アルバムお掃除（既存のまま維持）
+        // 共通の盤面リセット・アルバムお掃除（ここから下は既存のまま完全に維持！）
         panelState = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         panelState.forEach((n, i) => posMap[n - 1] = i);
         currentAnswer = [];
@@ -4243,7 +4244,30 @@ $(".lang-btn").on("click", function() {
         if (modeMoves > 0) {
             let hist = [];
             for (let i = 0; i < modeMoves; i++) {
-                const r = Math.floor(Math.random() * 9);
+                let r;
+
+                // 🌟 【＋－システム】難易度のモード判定
+                if (currentDifficultyStr.endsWith("-")) {
+                    // ➖ マイナスモード：生成の最初（プレイヤーにとっての最後）に中央を強制！
+                    if (currentDifficultyStr === "3-") {
+                        // 3- は1手目（i===0）のみ中央
+                        r = (i === 0) ? 4 : Math.floor(Math.random() * 9);
+                    } else {
+                        // 4-, 5-, 6- は1〜2手目（i < 2）を中央
+                        r = (i < 2) ? 4 : Math.floor(Math.random() * 9);
+                    }
+                } 
+                else if (currentDifficultyStr.endsWith("+")) {
+                    // ➕ プラスモード：中央（インデックス4）を完全排除！
+                    const allowedPositions = [0, 1, 2, 3, 5, 6, 7, 8];
+                    const randIdx = Math.floor(Math.random() * allowedPositions.length);
+                    r = allowedPositions[randIdx];
+                } 
+                else {
+                    // 通常モード：完全ランダム
+                    r = Math.floor(Math.random() * 9);
+                }
+
                 hist.push(panelState[r]);
                 logicRotate(r, false);
             }
