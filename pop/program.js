@@ -3821,57 +3821,83 @@ ${challengeUrl}`;
         .catch(err => console.error("コピー失敗: ", err));
 }
 //  URLパラメータを解析して挑戦状盤面をセットアップする関数
+// URLパラメータを解析して挑戦状盤面をセットアップする関数
 function checkChallengeURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('m');
     const digits = urlParams.get('b');
-    // 🌟 steps を let に変更し、半角スペースに化けたプラスを「+」へ安全に復元します！
     let steps = urlParams.get('d');
     if (steps) {
         steps = steps.replace(/ /g, "+");
     }
     const originalTime = urlParams.get('t');
 
-    // パラメータが揃っている、かつCOMBOモードである場合
-    if (mode === 'combo' && digits && digits.length === 9 && steps) {
-        isComboMode = true;
-        isFromChallenge = true;
-        // 🌟 ここで steps ("3+" や "4-" など) を直接守護神関数に放り込む！
+    // パラメータが揃っており、かつ mode が 'combo' または 'single' の場合
+    if ((mode === 'combo' || mode === 'single') && digits && digits.length === 9 && steps) {
+        
+        // 守護神関数で手数をセット（selectedSteps が更新される）
         setDifficulty(steps);
-        challengeOriginalTime = parseFloat(originalTime);
 
         // 9桁の文字列から盤面（panelState）を復元
         panelState = digits.split('').map(Number);
         panelState.forEach((n, i) => posMap[n - 1] = i);
 
-        // 別解に対応するため、答えの手順配列は空にする（盤面の一致のみでクリア判定するため）
-        currentAnswer = []; 
-
-        // UI表示をコンボモード・指定手数に強制書き換え
-        updateUIState(false);
-        updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
-        $("#input-mode").text("COMBO").addClass("mode-active");
-        // 🌟 ここで steps（"3+" などの文字列）を守護神関数に流し込むだけにします！
-        setDifficulty(steps);
-
-        // RESETボタン等でこの初期盤面に戻れるよう、savedStateにも記憶
+        // RESET等でこの問題盤面に戻れるよう savedState に保存
         savedState = [...panelState];
-        savedAnswer = [...currentAnswer];
         savedSelectedSteps = selectedSteps;
+
+        if (mode === 'combo') {
+            // === 【COMBOモード】従来の挑戦状タイムアタック処理 ===
+            isComboMode = true;
+            isChallengeMode = true;
+            isFromChallenge = true;
+            challengeOriginalTime = parseFloat(originalTime);
+            currentAnswer = [];
+
+            updateUIState(false);
+            updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+            $("#input-mode").text("COMBO").addClass("mode-active");
+
+            comboStartTime = performance.now();
+            usedCheatFlag = false;
+            isComboTiming = true;
+
+        } else {
+            // === 【SINGLEモード】通常のSINGLE開始状態を再現！ ===
+            isComboMode = false;
+            isFreeMode = false;
+            isChallengeMode = false;
+            isFromChallenge = false; // 通常プレイ扱いにする
+            
+            // 🌟 物理ボタン・操作の完全解禁！
+            updateUIState(true); 
+            isLocked = false;
+            isAnimating = false;
+
+            // バッファと履歴の初期化
+            inputBuffer = [];
+            historyStack = [];
+            currentAnswer = ["none"]; // 別解許容のため空
+
+            // UIテキストのセット
+            $("#input-mode").text("SINGLE").removeClass("mode-active");
+            $("#resebo").text("BACK"); // ボタン表記を「BACK」にする
+            updateHyouji("- ".repeat(selectedSteps).trim(), "ready");
+
+            // タイマー関連のOFF
+            startTime = 0;
+            isComboTiming = false;
+            usedCheatFlag = false;
+        }
+
         savedIsComboMode = isComboMode;
 
         // 盤面描画のリフレッシュ
         refreshPanelsExt("normal");
 
-        // 💡 【重要】画面が出現した瞬間からタイマーを即座に始動！
-        comboStartTime = performance.now();
-        usedCheatFlag = false;
-        isComboTiming = true;
-
-        console.log(`【挑戦状ロード成功】目標タイム: ${challengeOriginalTime}秒`);
+        console.log(`【ロード成功】モード: ${mode.toUpperCase()}`);
     }
-}	
-    // --- イベント登録 ---
+}    // --- イベント登録 ---
 // NEXTボタンをクリックした時の挙動
 $(document).on("click", "#tutorial-next-btn", function() {
     if (isSoundOn) playSnd('click');
